@@ -66,14 +66,9 @@ class DatabasePool:
 
 db_pool = DatabasePool()
 
-@contextmanager
 def get_db_connection():
-    """上下文管理器，用于获取数据库连接"""
-    conn = db_pool.get_connection()
-    try:
-        yield conn
-    finally:
-        pass  # 连接会在线程结束时自动关闭
+    """获取数据库连接"""
+    return db_pool.get_connection()
 
 # 配置日志
 if not os.path.exists(app.config['LOG_FOLDER']):
@@ -104,14 +99,14 @@ class FileOperationError(Exception):
 def with_db_connection(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        with get_db_connection() as conn:
-            try:
-                kwargs['conn'] = conn
-                return f(*args, **kwargs)
-            except sqlite3.Error as e:
-                app.logger.error(f'数据库错误: {str(e)}')
-                flash('数据库操作失败，请稍后重试', 'error')
-                return redirect(url_for('index'))
+        conn = get_db_connection()
+        try:
+            kwargs['conn'] = conn
+            return f(*args, **kwargs)
+        except sqlite3.Error as e:
+            app.logger.error(f'数据库错误: {str(e)}')
+            flash('数据库操作失败，请稍后重试', 'error')
+            return redirect(url_for('index'))
     return decorated_function
 
 # 文件操作装饰器
@@ -150,9 +145,19 @@ def delete_file(filename, folder):
     """安全地删除文件"""
     if filename:
         try:
-            file_path = os.path.join(folder, filename)
+            # 分离出文件名部分（不含路径）
+            category_path = os.path.dirname(filename)
+            file_basename = os.path.basename(filename)
+            
+            # 组合完整的文件路径
+            file_path = os.path.join(folder, category_path, file_basename)
+            
+            app.logger.info(f'尝试删除文件: {file_path}')
             if os.path.exists(file_path):
                 os.remove(file_path)
+                app.logger.info(f'成功删除文件: {file_path}')
+            else:
+                app.logger.warning(f'文件不存在: {file_path}')
         except Exception as e:
             app.logger.error(f'文件删除失败: {str(e)}')
 
@@ -193,8 +198,21 @@ ADMIN_PASSWORD = '1237'
 STATIC_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'}
 
+# 添加IP锁定功能相关变量
+login_attempts = {}  # 存储登录尝试次数 {ip: {'attempts': 次数, 'locked_until': 时间}}
+
+def login_required(f):
+    """验证登录状态的装饰器"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'authenticated' not in session:
+            return redirect(url_for('login', next=request.url))
+        return f(*args, **kwargs)
+    return decorated_function
+
 def init_db():
-    conn = get_db_connection()
+    # 使用直接连接而不是上下文管理器
+    conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS vocabulary (
@@ -206,6 +224,21 @@ def init_db():
         image_path TEXT,
         learn_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         review_date TIMESTAMP,
+        review_count INTEGER DEFAULT 0
+    )
+    ''')
+    
+    # 创建contents表以兼容现有代码
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS contents (
+        id INTEGER PRIMARY KEY,
+        category TEXT NOT NULL,
+        content_image TEXT,
+        content_audio TEXT,
+        example_image TEXT,
+        example_audio TEXT,
+        learn_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        next_review_date TIMESTAMP,
         review_count INTEGER DEFAULT 0
     )
     ''')
@@ -241,6 +274,7 @@ def calculate_next_review_date(review_count):
     return (datetime.now() + timedelta(days=REVIEW_INTERVALS[review_count])).strftime('%Y-%m-%d')
 
 @app.route('/manage')
+@login_required
 def manage():
     try:
         conn = get_db()
@@ -257,6 +291,7 @@ def manage():
         return render_template('manage.html', contents=[], categories=CATEGORIES)
 
 @app.route('/manage2')
+@login_required
 def manage2():
     """更简单的管理页面测试"""
     try:
@@ -310,6 +345,7 @@ def test_page():
         return f"<h1>错误</h1><p>{str(e)}</p>"
 
 @app.route('/delete/<int:id>')
+@login_required
 @with_db_connection
 def delete(id, conn):
     c = conn.cursor()
@@ -346,6 +382,7 @@ def delete(id, conn):
     return redirect(url_for('manage'))
 
 @app.route('/upload', methods=['GET', 'POST'])
+@login_required
 def upload():
     if request.method == 'POST':
         try:
@@ -360,39 +397,102 @@ def upload():
             
             # 生成唯一文件名
             timestamp = int(time.time())
+            random_id = uuid.uuid4().hex[:8]
             
-            # 处理图片上传
+            # 处理内容图片上传
             if 'content_image' not in request.files:
-                flash('没有选择文件', 'danger')
+                flash('没有选择内容图片', 'danger')
                 return redirect(request.url)
             
             file = request.files['content_image']
             if file.filename == '':
-                flash('没有选择文件', 'danger')
+                flash('没有选择内容图片', 'danger')
                 return redirect(request.url)
             
             if file and allowed_file(file.filename):
                 # 安全地获取文件扩展名
                 file_ext = os.path.splitext(file.filename)[1].lower()
-                filename = f"{timestamp}_{uuid.uuid4().hex[:8]}{file_ext}"
-                file_path = os.path.join(upload_folder, filename)
+                content_image_filename = f"{timestamp}_{random_id}_content{file_ext}"
+                file_path = os.path.join(upload_folder, content_image_filename)
                 file.save(file_path)
-                app.logger.info(f"已上传文件: {file_path}")
+                app.logger.info(f"已上传内容图片: {file_path}")
+                # 修复路径，不要再添加uploads前缀
+                content_image_path = f'{category}/{content_image_filename}'
             else:
                 flash('不支持的文件类型，仅支持图片文件', 'danger')
                 return redirect(request.url)
             
+            # 处理内容音频上传
+            content_audio_path = ''
+            if 'content_audio' in request.files:
+                file = request.files['content_audio']
+                if file and file.filename != '':
+                    # 创建音频目录
+                    audio_folder = os.path.join(app.static_folder, f'audio/{category}')
+                    os.makedirs(audio_folder, exist_ok=True)
+                    
+                    file_ext = os.path.splitext(file.filename)[1].lower()
+                    content_audio_filename = f"{timestamp}_{random_id}_content_audio{file_ext}"
+                    file_path = os.path.join(audio_folder, content_audio_filename)
+                    file.save(file_path)
+                    app.logger.info(f"已上传内容音频: {file_path}")
+                    # 修复路径，不要再添加audio前缀
+                    content_audio_path = f'{category}/{content_audio_filename}'
+            
+            # 处理例句图片上传
+            example_image_path = ''
+            if 'example_image' in request.files:
+                file = request.files['example_image']
+                if file and file.filename != '':
+                    if allowed_file(file.filename):
+                        file_ext = os.path.splitext(file.filename)[1].lower()
+                        example_image_filename = f"{timestamp}_{random_id}_example{file_ext}"
+                        file_path = os.path.join(upload_folder, example_image_filename)
+                        file.save(file_path)
+                        app.logger.info(f"已上传例句图片: {file_path}")
+                        # 修复路径，不要再添加uploads前缀
+                        example_image_path = f'{category}/{example_image_filename}'
+            
+            # 处理例句音频上传
+            example_audio_path = ''
+            if 'example_audio' in request.files:
+                file = request.files['example_audio']
+                if file and file.filename != '':
+                    # 创建音频目录
+                    audio_folder = os.path.join(app.static_folder, f'audio/{category}')
+                    os.makedirs(audio_folder, exist_ok=True)
+                    
+                    file_ext = os.path.splitext(file.filename)[1].lower()
+                    example_audio_filename = f"{timestamp}_{random_id}_example_audio{file_ext}"
+                    file_path = os.path.join(audio_folder, example_audio_filename)
+                    file.save(file_path)
+                    app.logger.info(f"已上传例句音频: {file_path}")
+                    # 修复路径，不要再添加audio前缀
+                    example_audio_path = f'{category}/{example_audio_filename}'
+            
             # 添加到数据库
             conn = get_db_connection()
             cursor = conn.cursor()
+            
+            # 获取学习日期
+            learn_date = request.form.get('learn_date', datetime.now().strftime('%Y-%m-%d'))
+            
             cursor.execute(
-                'INSERT INTO vocabulary (category, chinese_name, pinyin, english_name, image_path) VALUES (?, ?, ?, ?, ?)',
-                (category, chinese_name, pinyin, english_name, f'uploads/{category}/{filename}')
+                '''INSERT INTO contents 
+                   (category, content_image, content_audio, example_image, example_audio, learn_date) 
+                   VALUES (?, ?, ?, ?, ?, ?)''',
+                (category, 
+                 content_image_path, 
+                 content_audio_path,
+                 example_image_path,
+                 example_audio_path,
+                 learn_date)
             )
+            
             conn.commit()
             conn.close()
             
-            app.logger.info(f"记录已添加到数据库: {chinese_name}, {english_name}, {f'uploads/{category}/{filename}'}")
+            app.logger.info(f"记录已添加到数据库 contents 表: {category}, {content_image_path}")
             
             # 判断是继续添加还是返回管理页面
             if 'submit_continue' in request.form:
@@ -409,9 +509,11 @@ def upload():
     # GET 请求，显示上传表单
     categories = get_categories()
     default_category = request.args.get('category', '')
-    return render_template('upload.html', categories=categories, selected_category=default_category)
+    today = datetime.now().strftime('%Y-%m-%d')
+    return render_template('upload.html', categories=categories, selected_category=default_category, today=today)
 
 @app.route('/review/<int:id>')
+@login_required
 def review(id):
     conn = get_db()
     try:
@@ -442,6 +544,7 @@ def review(id):
 
 @app.route('/')
 @cache.cached(timeout=60)  # 1分钟缓存
+@login_required
 def index():
     conn = get_db()
     c = conn.cursor()
@@ -473,6 +576,7 @@ def index():
 
 @app.route('/category/<category>')
 @cache.memoize(60)  # 1分钟缓存，基于参数
+@login_required
 def category_view(category):
     if category not in CATEGORIES:
         flash('无效的分类', 'error')
@@ -535,6 +639,7 @@ def serve_audio(filename):
     return send_from_directory(app.config['AUDIO_FOLDER'], filename)
 
 @app.route('/edit/<int:id>', methods=['POST'])
+@login_required
 @with_db_connection
 def edit(id, conn):
     try:
@@ -625,6 +730,62 @@ def edit(id, conn):
 def logout():
     session.pop('authenticated', None)
     return redirect(url_for('index'))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = None
+    attempts = 0
+    
+    # 获取客户端IP
+    client_ip = request.remote_addr
+    
+    # 检查是否被锁定
+    if client_ip in login_attempts and 'locked_until' in login_attempts[client_ip]:
+        locked_until = login_attempts[client_ip]['locked_until']
+        if datetime.now() < locked_until:
+            remaining = int((locked_until - datetime.now()).total_seconds() / 3600)
+            return render_template('login.html', 
+                                  error=f'此IP已被锁定，请在{remaining}小时后再试', 
+                                  attempts=3)
+    
+    # 处理POST请求（登录表单提交）
+    if request.method == 'POST':
+        password = request.form.get('password')
+        
+        # 初始化IP尝试记录
+        if client_ip not in login_attempts:
+            login_attempts[client_ip] = {'attempts': 0}
+        
+        # 密码验证
+        if password == ADMIN_PASSWORD:
+            # 验证成功，重置尝试次数
+            login_attempts[client_ip]['attempts'] = 0
+            if 'locked_until' in login_attempts[client_ip]:
+                del login_attempts[client_ip]['locked_until']
+            
+            # 设置会话
+            session['authenticated'] = True
+            
+            # 重定向到下一个URL或首页
+            next_page = request.args.get('next')
+            if next_page and next_page.startswith('/'):
+                return redirect(next_page)
+            return redirect(url_for('index'))
+        else:
+            # 验证失败，增加尝试次数
+            login_attempts[client_ip]['attempts'] += 1
+            attempts = login_attempts[client_ip]['attempts']
+            
+            # 超过3次锁定24小时
+            if attempts >= 3:
+                locked_until = datetime.now() + timedelta(hours=24)
+                login_attempts[client_ip]['locked_until'] = locked_until
+                error = '密码错误次数过多，此IP已被锁定24小时'
+            else:
+                error = f'密码错误，请重试。剩余尝试次数: {3 - attempts}'
+    
+    # 返回登录页面
+    return render_template('login.html', error=error, attempts=attempts)
 
 if __name__ == '__main__':
     if not os.path.exists('database.db'):
