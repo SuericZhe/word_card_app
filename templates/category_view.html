@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ category_name }} - 日日新 苟日新</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --secondary-color: #F5F6FA;
+            --text-color: #2C3E50;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 1rem;
+            box-shadow: 0 2px 4px var(--shadow-color);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+        }
+
+        .back-button {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-color);
+            cursor: pointer;
+            padding: 0.5rem;
+            margin-right: 1rem;
+            text-decoration: none;
+        }
+
+        .back-button:hover {
+            color: var(--primary-color);
+        }
+
+        .main-content {
+            margin-top: 80px;
+            padding: 2rem;
+            flex-grow: 1;
+        }
+
+        .section {
+            margin-bottom: 3rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--text-color);
+        }
+
+        .card-container {
+            position: relative;
+            width: 100%;
+            height: 70vh;
+            overflow: hidden;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 8px 16px var(--shadow-color);
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 20px;
+            perspective: 1000px;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.8s;
+            transform-style: preserve-3d;
+        }
+
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+        }
+
+        .card img {
+            max-width: 90%;
+            max-height: 80%;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+
+        .audio-button {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px var(--shadow-color);
+        }
+
+        .audio-button:hover {
+            transform: translateX(-50%) scale(1.1);
+            background: #357ABD;
+        }
+
+        .audio-button i {
+            font-size: 24px;
+        }
+
+        .nav-buttons {
+            position: fixed;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: white;
+            border: none;
+            box-shadow: 0 4px 8px var(--shadow-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-button:hover {
+            transform: scale(1.1);
+            background: var(--primary-color);
+        }
+
+        .nav-button:active {
+            transform: scale(0.95);
+        }
+
+        .nav-button svg {
+            width: 28px;
+            height: 28px;
+            fill: var(--primary-color);
+            transition: fill 0.3s ease;
+        }
+
+        .nav-button:hover svg {
+            fill: white;
+        }
+
+        .section-title {
+            color: var(--text-color);
+            margin: 30px 0 20px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #666;
+            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 4px 8px var(--shadow-color);
+            font-size: 1.1rem;
+        }
+
+        .container {
+            max-width: 800px;
+            padding: 20px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: var(--primary-color);
+            transition: width 0.3s ease;
+            z-index: 1001;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .toast {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            padding: 12px 24px;
+            margin-bottom: 10px;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-left: 4px solid #28a745;
+        }
+
+        .toast.error {
+            border-left: 4px solid #dc3545;
+        }
+
+        @media (max-width: 768px) {
+            .card-container {
+                height: 60vh;
+            }
+            
+            .nav-button {
+                width: 60px;
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="{{ url_for('index') }}" class="back-button">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="m-0">{{ category_name }}</h1>
+    </div>
+
+    <div class="main-content">
+        <div class="progress-bar" id="progressBar"></div>
+        <div class="container py-4">
+            <h2 class="section-title">今天的新内容</h2>
+            {% if new_items %}
+                <div class="card-container" id="newItems">
+                    {% for item in new_items %}
+                        <div class="card" data-index="{{ loop.index0 }}" onclick="flipCard(this)">
+                            <div class="card-inner">
+                                <div class="card-front">
+                                    <img src="{{ url_for('static', filename='uploads/' + item.content_image) }}" alt="内容">
+                                    {% if item.content_audio %}
+                                    <button class="audio-button" onclick="playAudio(event, '{{ url_for('static', filename='audio/' + item.content_audio) }}')">
+                                        <i class="bi bi-volume-up"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                {% if item.example_image %}
+                                <div class="card-back">
+                                    <img src="{{ url_for('static', filename='uploads/' + item.example_image) }}" alt="例子">
+                                    {% if item.example_audio %}
+                                    <button class="audio-button" onclick="playAudio(event, '{{ url_for('static', filename='audio/' + item.example_audio) }}')">
+                                        <i class="bi bi-volume-up"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="nav-buttons" id="newItemsNav">
+                    <button class="nav-button" onclick="prevCard('newItems')">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                        </svg>
+                    </button>
+                    <button class="nav-button" onclick="nextCard('newItems')">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M8.59 16.59L10 18l-6-6 6-6L8.59 7.41 13.17 12z"/>
+                        </svg>
+                    </button>
+                </div>
+            {% else %}
+                <div class="empty-message">今天没有新的内容</div>
+            {% endif %}
+
+            <h2 class="section-title">需要复习的内容</h2>
+            {% if review_items %}
+                <div class="card-container" id="reviewItems">
+                    {% for item in review_items %}
+                        <div class="card" data-index="{{ loop.index0 }}" data-id="{{ item.id }}" onclick="flipCard(this)">
+                            <div class="card-inner">
+                                <div class="card-front">
+                                    <img src="{{ url_for('static', filename='uploads/' + item.content_image) }}" alt="内容">
+                                    {% if item.content_audio %}
+                                    <button class="audio-button" onclick="playAudio(event, '{{ url_for('static', filename='audio/' + item.content_audio) }}')">
+                                        <i class="bi bi-volume-up"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                {% if item.example_image %}
+                                <div class="card-back">
+                                    <img src="{{ url_for('static', filename='uploads/' + item.example_image) }}" alt="例子">
+                                    {% if item.example_audio %}
+                                    <button class="audio-button" onclick="playAudio(event, '{{ url_for('static', filename='audio/' + item.example_audio) }}')">
+                                        <i class="bi bi-volume-up"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="nav-buttons" id="reviewItemsNav">
+                    <button class="nav-button" onclick="prevCard('reviewItems')">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                        </svg>
+                    </button>
+                    <button class="nav-button" onclick="nextCard('reviewItems')">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M8.59 16.59L10 18l-6-6 6-6L8.59 7.41 13.17 12z"/>
+                        </svg>
+                    </button>
+                    <button class="nav-button review-button" onclick="markAsReviewed('reviewItems')">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                        </svg>
+                    </button>
+                </div>
+            {% else %}
+                <div class="empty-message">今天没有需要复习的内容</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        let currentIndices = {
+            newItems: 0,
+            reviewItems: 0
+        };
+
+        let audioPlayers = {};
+
+        function initCards(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const cards = container.querySelectorAll('.card');
+            if (cards.length === 0) return;
+            
+            currentIndices[containerId] = 0;
+            updateCardPositions(containerId);
+            updateProgressBar(containerId);
+        }
+
+        function updateCardPositions(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const cards = container.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                const offset = index - currentIndices[containerId];
+                card.style.transform = `translateX(${offset * 100}%)`;
+            });
+        }
+
+        function updateProgressBar(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const cards = container.querySelectorAll('.card');
+            const progress = ((currentIndices[containerId] + 1) / cards.length) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+        }
+
+        function nextCard(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const cards = container.querySelectorAll('.card');
+            if (currentIndices[containerId] < cards.length - 1) {
+                currentIndices[containerId]++;
+                updateCardPositions(containerId);
+                updateProgressBar(containerId);
+            }
+        }
+
+        function prevCard(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            if (currentIndices[containerId] > 0) {
+                currentIndices[containerId]--;
+                updateCardPositions(containerId);
+                updateProgressBar(containerId);
+            }
+        }
+
+        function flipCard(card) {
+            if (card.querySelector('.card-back')) {
+                card.classList.toggle('flipped');
+            }
+        }
+
+        function playAudio(event, audioUrl) {
+            event.stopPropagation(); // 阻止事件冒泡，防止触发翻转
+
+            // 停止所有其他音频
+            Object.values(audioPlayers).forEach(player => {
+                player.pause();
+                player.currentTime = 0;
+            });
+
+            // 如果这个URL的音频播放器不存在，创建一个
+            if (!audioPlayers[audioUrl]) {
+                audioPlayers[audioUrl] = new Audio(audioUrl);
+            }
+
+            // 播放音频
+            audioPlayers[audioUrl].play();
+        }
+
+        function markAsReviewed(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const cards = container.querySelectorAll('.card');
+            const currentCard = cards[currentIndices[containerId]];
+            if (!currentCard) return;
+            
+            const itemId = currentCard.dataset.id;
+            if (!itemId) return;
+            
+            fetch(`/review/${itemId}`)
+            .then(response => {
+                if (response.ok) {
+                    currentCard.remove();
+                    updateCardPositions(containerId);
+                    updateProgressBar(containerId);
+                    showToast('复习完成！', 'success');
+                }
+            });
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.getElementById('toastContainer').appendChild(toast);
+            
+            toast.offsetHeight;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    document.getElementById('toastContainer').removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+
+        // 触摸滑动支持
+        let touchStartX = 0;
+        let touchEndX = 0;
+        let currentTouchContainer = null;
+
+        function handleTouchStart(e) {
+            touchStartX = e.touches[0].clientX;
+            currentTouchContainer = e.target.closest('.card-container');
+        }
+
+        function handleTouchMove(e) {
+            touchEndX = e.touches[0].clientX;
+        }
+
+        function handleTouchEnd() {
+            if (!currentTouchContainer) return;
+            
+            const diff = touchStartX - touchEndX;
+            if (Math.abs(diff) > 50) {
+                if (diff > 0) {
+                    nextCard(currentTouchContainer.id);
+                } else {
+                    prevCard(currentTouchContainer.id);
+                }
+            }
+        }
+
+        // 键盘支持
+        document.addEventListener('keydown', (e) => {
+            const activeContainer = document.querySelector('.card-container:focus-within');
+            if (!activeContainer) return;
+            
+            if (e.key === 'ArrowRight') {
+                nextCard(activeContainer.id);
+            } else if (e.key === 'ArrowLeft') {
+                prevCard(activeContainer.id);
+            } else if (e.key === ' ') {
+                const currentCard = activeContainer.querySelector('.card:nth-child(' + (currentIndices[activeContainer.id] + 1) + ')');
+                if (currentCard) {
+                    flipCard(currentCard);
+                }
+            }
+        });
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initCards('newItems');
+            initCards('reviewItems');
+
+            // 添加触摸事件监听
+            document.querySelectorAll('.card-container').forEach(container => {
+                container.addEventListener('touchstart', handleTouchStart);
+                container.addEventListener('touchmove', handleTouchMove);
+                container.addEventListener('touchend', handleTouchEnd);
+            });
+        });
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    showToast('{{ message }}', '{{ category }}');
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </script>
+</body>
+</html> 

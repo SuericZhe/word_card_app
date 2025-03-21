@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简易管理页面 - 日日新 苟日新</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1>内容管理 (简易版)</h1>
+                    <a href="/" class="btn btn-secondary">返回首页</a>
+                </div>
+                <div class="alert alert-info mt-3">
+                    <h4>测试信息</h4>
+                    <p>当前内容数量: {{ contents|length }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            {% for content in contents %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        {{ categories[content.category] }}
+                    </div>
+                    <div class="card-body">
+                        <img src="/static/uploads/{{ content.content_image }}" class="img-fluid mb-3" alt="内容图片">
+                        <p>学习日期: {{ content.learn_date }}</p>
+                        <p>复习次数: {{ content.review_count }}</p>
+                        <hr>
+                        <a href="/delete/{{ content.id }}" class="btn btn-danger btn-sm" onclick="return confirm('确定要删除吗?')">
+                            删除
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html> 

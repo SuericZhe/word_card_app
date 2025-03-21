@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>简单测试页面</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .option-section { margin-bottom: 30px; }
+        .content-section { padding: 15px; border: 1px solid #ddd; margin-bottom: 15px; }
+        textarea { width: 100%; height: 100px; }
+    </style>
+</head>
+<body>
+    <h1>文本生成图片选项测试</h1>
+    
+    <div class="option-section">
+        <h2>选择操作方式：</h2>
+        <label>
+            <input type="radio" name="option" id="option1" checked> 上传图片
+        </label>
+        <label>
+            <input type="radio" name="option" id="option2"> 生成图片
+        </label>
+        <button id="testButton" style="margin-left: 20px;">测试切换按钮</button>
+    </div>
+    
+    <div id="uploadSection" class="content-section">
+        <h3>上传图片区域</h3>
+        <input type="file" accept="image/*">
+    </div>
+    
+    <div id="generateSection" class="content-section" style="display:none;">
+        <h3>文本生成图片区域</h3>
+        <p>请输入文本：</p>
+        <textarea placeholder="输入要转换为图片的文本内容..."></textarea>
+        <p>
+            <label>文本样式：
+                <select>
+                    <option>标准字体</option>
+                    <option>书法字体</option>
+                    <option>甲骨文字体</option>
+                </select>
+            </label>
+        </p>
+        <button>预览效果</button>
+    </div>
+    
+    <script>
+        // 简化的选项切换逻辑
+        document.getElementById('option1').addEventListener('change', updateSections);
+        document.getElementById('option2').addEventListener('change', updateSections);
+        
+        // 测试按钮
+        document.getElementById('testButton').addEventListener('click', function() {
+            document.getElementById('option2').checked = true;
+            updateSections();
+        });
+        
+        // 页面加载时设置初始状态
+        document.addEventListener('DOMContentLoaded', updateSections);
+        
+        // 更新显示区域
+        function updateSections() {
+            console.log('更新显示区域');
+            if (document.getElementById('option1').checked) {
+                document.getElementById('uploadSection').style.display = 'block';
+                document.getElementById('generateSection').style.display = 'none';
+            } else {
+                document.getElementById('uploadSection').style.display = 'none';
+                document.getElementById('generateSection').style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日日新 苟日新</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --secondary-color: #F5F6FA;
+            --text-color: #2C3E50;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --category-colors: {
+                words: #4A90E2,
+                university: #F39C12,
+                music: #E74C3C,
+                oracle: #8E44AD
+            };
+        }
+
+        body {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: white;
+            padding: 1rem;
+            box-shadow: 0 2px 4px var(--shadow-color);
+            position: relative;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .logo:hover {
+            color: var(--primary-color);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .header-button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .header-button:hover {
+            background: #357ABD;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .category-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px var(--shadow-color);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: var(--text-color);
+            position: relative;
+        }
+
+        .category-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 16px var(--shadow-color);
+            color: var(--text-color);
+        }
+
+        .category-card.words {
+            --category-color: #4A90E2;
+        }
+
+        .category-card.university {
+            --category-color: #F39C12;
+        }
+
+        .category-card.music {
+            --category-color: #E74C3C;
+        }
+
+        .category-card.oracle {
+            --category-color: #8E44AD;
+        }
+
+        .category-icon {
+            width: 100%;
+            height: 160px;
+            background: var(--category-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            color: white;
+        }
+
+        .category-content {
+            padding: 1.5rem;
+        }
+
+        .category-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .category-description {
+            color: #666;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .category-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .toast {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            padding: 12px 24px;
+            margin-bottom: 10px;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-left: 4px solid #28a745;
+        }
+
+        .toast.error {
+            border-left: 4px solid #dc3545;
+        }
+
+        @media (max-width: 768px) {
+            .header-actions {
+                gap: 0.5rem;
+            }
+
+            .header-button {
+                padding: 0.5rem;
+            }
+
+            .header-button span {
+                display: none;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .category-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <a href="/" class="logo">日日新 苟日新</a>
+            <div class="header-actions">
+                <a href="/upload" class="header-button">
+                    <i class="bi bi-plus-lg"></i>
+                    <span>上传内容</span>
+                </a>
+                <a href="/manage" class="header-button">
+                    <i class="bi bi-gear"></i>
+                    <span>管理</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="container">
+            <div class="category-grid">
+                <a href="/category/words" class="category-card words">
+                    <div class="category-icon">
+                        <i class="bi bi-book"></i>
+                    </div>
+                    <div class="category-content">
+                        <h2 class="category-title">
+                            <i class="bi bi-book"></i>
+                            单词
+                        </h2>
+                        <p class="category-description">
+                            通过图文结合的方式学习和记忆单词，配合艾宾浩斯遗忘曲线进行复习
+                        </p>
+                        <div class="category-stats">
+                            <div class="stat-item">
+                                <i class="bi bi-star"></i>
+                                今日新词：{{ stats.words.new or 0 }}
+                            </div>
+                            <div class="stat-item">
+                                <i class="bi bi-arrow-repeat"></i>
+                                待复习：{{ stats.words.review or 0 }}
+                            </div>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="/category/university" class="category-card university">
+                    <div class="category-icon">
+                        <i class="bi bi-mortarboard"></i>
+                    </div>
+                    <div class="category-content">
+                        <h2 class="category-title">
+                            <i class="bi bi-mortarboard"></i>
+                            大学之道
+                        </h2>
+                        <p class="category-description">
+                            记录和复习《大学》原文
+                        </p>
+                        <div class="category-stats">
+                            <div class="stat-item">
+                                <i class="bi bi-star"></i>
+                                今日新增：{{ stats.university.new or 0 }}
+                            </div>
+                            <div class="stat-item">
+                                <i class="bi bi-arrow-repeat"></i>
+                                待复习：{{ stats.university.review or 0 }}
+                            </div>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="/category/music" class="category-card music">
+                    <div class="category-icon">
+                        <i class="bi bi-music-note-beamed"></i>
+                    </div>
+                    <div class="category-content">
+                        <h2 class="category-title">
+                            <i class="bi bi-music-note-beamed"></i>
+                            音律启蒙
+                        </h2>
+                        <p class="category-description">
+                            学习启蒙读物，通过图文音频相结合的方式加深理解
+                        </p>
+                        <div class="category-stats">
+                            <div class="stat-item">
+                                <i class="bi bi-star"></i>
+                                今日新增：{{ stats.music.new or 0 }}
+                            </div>
+                            <div class="stat-item">
+                                <i class="bi bi-arrow-repeat"></i>
+                                待复习：{{ stats.music.review or 0 }}
+                            </div>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="/category/oracle" class="category-card oracle">
+                    <div class="category-icon">
+                        <i class="bi bi-brush"></i>
+                    </div>
+                    <div class="category-content">
+                        <h2 class="category-title">
+                            <i class="bi bi-brush"></i>
+                            甲骨文
+                        </h2>
+                        <p class="category-description">
+                            学习甲骨文字的形、音、义，了解古文字的演变过程
+                        </p>
+                        <div class="category-stats">
+                            <div class="stat-item">
+                                <i class="bi bi-star"></i>
+                                今日新增：{{ stats.oracle.new or 0 }}
+                            </div>
+                            <div class="stat-item">
+                                <i class="bi bi-arrow-repeat"></i>
+                                待复习：{{ stats.oracle.review or 0 }}
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer" 
+         data-messages='{{ get_flashed_messages(with_categories=true) | tojson | safe }}'></div>
+
+    <script>
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.getElementById('toastContainer').appendChild(toast);
+            
+            toast.offsetHeight;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    document.getElementById('toastContainer').removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+
+        // 处理Flask闪现消息
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('toastContainer');
+            const messagesData = container.dataset.messages;
+            
+            if (messagesData) {
+                const messages = JSON.parse(messagesData);
+                messages.forEach(([category, message]) => {
+                    showToast(message, category);
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

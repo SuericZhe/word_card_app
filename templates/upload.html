@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>上传闪卡</title>
+    <title>上传内容 - 日日新 苟日新</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <style>
         :root {
             --primary-color: #4A90E2;
@@ -17,11 +18,14 @@
             background-color: var(--secondary-color);
             color: var(--text-color);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .container {
             max-width: 800px;
-            padding: 20px;
+            padding: 40px 20px;
         }
 
         h1 {
@@ -34,23 +38,25 @@
         .upload-form {
             background: white;
             padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 8px var(--shadow-color);
+            border-radius: 20px;
+            box-shadow: 0 4px 15px var(--shadow-color);
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
 
         .form-label {
-            font-weight: 500;
-            margin-bottom: 8px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--text-color);
         }
 
         .form-control {
             border: 2px solid #e9ecef;
-            border-radius: 8px;
-            padding: 10px;
+            border-radius: 10px;
+            padding: 12px;
+            transition: all 0.3s ease;
         }
 
         .form-control:focus {
@@ -58,40 +64,105 @@
             box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
         }
 
+        .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
         .btn-primary {
             background-color: var(--primary-color);
             border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: all 0.3s ease;
         }
 
         .btn-primary:hover {
             background-color: #357ABD;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
         }
 
         .btn-secondary {
             background-color: #6c757d;
             border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: all 0.3s ease;
         }
 
         .btn-secondary:hover {
             background-color: #5a6268;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+        }
+
+        .preview-container {
+            margin-top: 10px;
+            position: relative;
+            width: 200px;
+            height: 200px;
+            border-radius: 10px;
+            overflow: hidden;
+            display: none;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
         }
 
         .preview-image {
-            max-width: 200px;
-            max-height: 200px;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .audio-preview {
             margin-top: 10px;
-            border-radius: 8px;
             display: none;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .file-input-container {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .file-input-container input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .file-input-button {
+            display: inline-block;
+            padding: 12px 24px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-input-button:hover {
+            background: #357ABD;
+            transform: translateY(-2px);
+        }
+
+        .file-name {
+            margin-left: 10px;
+            color: #666;
         }
 
         .toast-container {
@@ -103,7 +174,7 @@
 
         .toast {
             background: white;
-            border-radius: 8px;
+            border-radius: 10px;
             box-shadow: 0 4px 12px var(--shadow-color);
             padding: 12px 24px;
             margin-bottom: 10px;
@@ -124,66 +195,209 @@
         .toast.error {
             border-left: 4px solid #dc3545;
         }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 1rem;
+            box-shadow: 0 2px 4px var(--shadow-color);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+        }
+
+        .back-button {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-color);
+            cursor: pointer;
+            padding: 0.5rem;
+            margin-right: 1rem;
+            text-decoration: none;
+        }
+
+        .back-button:hover {
+            color: var(--primary-color);
+        }
+
+        .main-content {
+            margin-top: 80px;
+            flex-grow: 1;
+        }
     </style>
 </head>
 <body>
-    <div class="toast-container" id="toastContainer"></div>
-    <div class="container py-4">
-        <h1>上传闪卡</h1>
-        
-        <div class="upload-form">
-            <form method="POST" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label class="form-label">选择类型</label>
-                    <select name="image_type" class="form-control" required onchange="toggleImageInputs(this.value)">
-                        <option value="">请选择类型</option>
-                        <option value="word">单词</option>
-                        <option value="essay">作文</option>
-                    </select>
-                </div>
+    <div class="header">
+        <a href="/" class="back-button">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="m-0">上传内容</h1>
+    </div>
 
-                <div id="word-inputs" style="display: none;">
+    <div class="main-content">
+        <div class="container">
+            <div class="upload-form">
+                <form method="POST" enctype="multipart/form-data">
                     <div class="form-group">
-                        <label class="form-label">单词图片</label>
-                        <input type="file" name="word_image" class="form-control" accept="image/*" onchange="previewImage(this, 'word-preview')">
-                        <img id="word-preview" class="preview-image">
+                        <label class="form-label">选择分类</label>
+                        <select name="category" class="form-select" required>
+                            <option value="">请选择分类</option>
+                            {% for code, name in categories.items() %}
+                            <option value="{{ code }}" {% if code == last_category %}selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
+
                     <div class="form-group">
-                        <label class="form-label">句子图片</label>
-                        <input type="file" name="sentence_image" class="form-control" accept="image/*" onchange="previewImage(this, 'sentence-preview')">
-                        <img id="sentence-preview" class="preview-image">
+                        <label class="form-label">内容图片</label>
+                        <div class="file-input-container">
+                            <div class="file-input-button">
+                                <i class="bi bi-upload"></i> 选择图片
+                            </div>
+                            <input type="file" name="content_image" id="content_image" accept="image/*"
+                                   onchange="handleFileSelect(this, 'content-image-preview', 'content-image-name', true)">
+                        </div>
+                        <span class="file-name" id="content-image-name"></span>
+                        <div class="preview-container" id="content-image-preview">
+                            <img class="preview-image">
+                        </div>
                     </div>
-                </div>
 
-                <div id="essay-inputs" style="display: none;">
                     <div class="form-group">
-                        <label class="form-label">作文图片</label>
-                        <input type="file" name="essay_image" class="form-control" accept="image/*" onchange="previewImage(this, 'essay-preview')">
-                        <img id="essay-preview" class="preview-image">
+                        <label class="form-label">内容音频（可选）</label>
+                        <div class="file-input-container">
+                            <div class="file-input-button">
+                                <i class="bi bi-mic"></i> 选择音频
+                            </div>
+                            <input type="file" name="content_audio" accept="audio/*"
+                                   onchange="handleFileSelect(this, null, 'content-audio-name', false)">
+                        </div>
+                        <span class="file-name" id="content-audio-name"></span>
+                        <audio controls class="audio-preview" id="content-audio-preview"></audio>
                     </div>
-                </div>
 
-                <div class="form-group">
-                    <label class="form-label">学习日期</label>
-                    <input type="date" name="learn_date" class="form-control" required>
-                </div>
+                    <div class="form-group">
+                        <label class="form-label">例句图片（可选）</label>
+                        <div class="file-input-container">
+                            <div class="file-input-button">
+                                <i class="bi bi-upload"></i> 选择图片
+                            </div>
+                            <input type="file" name="example_image" accept="image/*"
+                                   onchange="handleFileSelect(this, 'example-image-preview', 'example-image-name', true)">
+                        </div>
+                        <span class="file-name" id="example-image-name"></span>
+                        <div class="preview-container" id="example-image-preview">
+                            <img class="preview-image">
+                        </div>
+                    </div>
 
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-primary">上传</button>
-                    <a href="/" class="btn btn-secondary">返回首页</a>
-                </div>
-            </form>
+                    <div class="form-group">
+                        <label class="form-label">例句音频（可选）</label>
+                        <div class="file-input-container">
+                            <div class="file-input-button">
+                                <i class="bi bi-mic"></i> 选择音频
+                            </div>
+                            <input type="file" name="example_audio" accept="audio/*"
+                                   onchange="handleFileSelect(this, null, 'example-audio-name', false)">
+                        </div>
+                        <span class="file-name" id="example-audio-name"></span>
+                        <audio controls class="audio-preview" id="example-audio-preview"></audio>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">学习日期</label>
+                        <input type="date" name="learn_date" class="form-control" required
+                               value="{{ today }}">
+                    </div>
+
+                    <div class="form-group d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary">上传内容</button>
+                        <button type="submit" class="btn btn-success" id="uploadAndContinue">
+                            <i class="bi bi-plus-circle"></i> 上传并继续添加
+                        </button>
+                        <a href="/" class="btn btn-secondary">返回首页</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 最近上传的内容 -->
+            <div class="uploaded-content mt-4" id="recentUploads">
+                <!-- 这里会通过JS动态添加最近上传的内容 -->
+            </div>
         </div>
     </div>
 
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function toggleImageInputs(type) {
-            document.getElementById('word-inputs').style.display = type === 'word' ? 'block' : 'none';
-            document.getElementById('essay-inputs').style.display = type === 'essay' ? 'block' : 'none';
+        function handleFileSelect(input, previewContainerId, fileNameId, isImage) {
+            const fileName = input.files[0]?.name || '';
+            document.getElementById(fileNameId).textContent = fileName;
+
+            if (isImage && previewContainerId) {
+                const container = document.getElementById(previewContainerId);
+                const preview = container.querySelector('img');
+                
+                if (input.files && input.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        preview.src = e.target.result;
+                        container.style.display = 'block';
+                    }
+                    reader.readAsDataURL(input.files[0]);
+                } else {
+                    preview.src = '';
+                    container.style.display = 'none';
+                }
+            } else if (!isImage) {
+                const audioPreview = document.getElementById(previewContainerId || input.name.replace('_', '-') + '-preview');
+                if (input.files && input.files[0]) {
+                    const url = URL.createObjectURL(input.files[0]);
+                    audioPreview.src = url;
+                    audioPreview.style.display = 'block';
+                } else {
+                    audioPreview.src = '';
+                    audioPreview.style.display = 'none';
+                }
+            }
         }
 
+        // 快速上传功能
+        document.getElementById('uploadAndContinue').addEventListener('click', function(e) {
+            // 添加一个隐藏字段标记为快速上传
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'quick_upload';
+            input.value = 'true';
+            this.form.appendChild(input);
+        });
+
+        // 文件预览功能
         function previewImage(input, previewId) {
             const preview = document.getElementById(previewId);
+            const previewContainer = preview.parentElement;
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                }
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.src = '';
+                previewContainer.style.display = 'none';
+            }
+        }
+
+        function previewAudio(input, previewId) {
+            const preview = document.getElementById(previewId);
+            
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -191,28 +405,63 @@
                     preview.style.display = 'block';
                 }
                 reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.src = '';
+                preview.style.display = 'none';
             }
         }
 
+        // 文件名显示功能
+        function updateFileName(input, labelId) {
+            const label = document.getElementById(labelId);
+            if (input.files && input.files[0]) {
+                label.textContent = input.files[0].name;
+            } else {
+                label.textContent = '';
+            }
+        }
+
+        // 添加预览和文件名更新事件监听
+        document.getElementById('content_image').addEventListener('change', function() {
+            previewImage(this, 'contentImagePreview');
+            updateFileName(this, 'contentImageName');
+        });
+
+        document.getElementById('content_audio').addEventListener('change', function() {
+            previewAudio(this, 'contentAudioPreview');
+            updateFileName(this, 'contentAudioName');
+        });
+
+        document.getElementById('example_image').addEventListener('change', function() {
+            previewImage(this, 'exampleImagePreview');
+            updateFileName(this, 'exampleImageName');
+        });
+
+        document.getElementById('example_audio').addEventListener('change', function() {
+            previewAudio(this, 'exampleAudioPreview');
+            updateFileName(this, 'exampleAudioName');
+        });
+
+        // 显示提示消息
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             toast.textContent = message;
             document.getElementById('toastContainer').appendChild(toast);
             
-            // 触发重排以显示动画
-            toast.offsetHeight;
-            toast.classList.add('show');
-            
             setTimeout(() => {
-                toast.classList.remove('show');
+                toast.classList.add('show');
+                
                 setTimeout(() => {
-                    document.getElementById('toastContainer').removeChild(toast);
-                }, 300);
-            }, 3000);
+                    toast.classList.remove('show');
+                    setTimeout(() => {
+                        toast.remove();
+                    }, 300);
+                }, 3000);
+            }, 100);
         }
 
-        // 检查是否有Flash消息
+        // 显示Flash消息
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -220,6 +469,33 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
+
+        // 如果是从快速上传返回，自动展开并聚焦到内容图片选择
+        {% if last_category %}
+            setTimeout(() => {
+                const contentImageInput = document.getElementById('content_image');
+                if (contentImageInput) {
+                    contentImageInput.scrollIntoView({ behavior: 'smooth' });
+                    contentImageInput.focus();
+                }
+            }, 500);
+        {% endif %}
+
+        // 表单提交前验证
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    // 验证是否选择了文件
+                    const fileInput = document.getElementById('content_image');
+                    if (!fileInput.files || !fileInput.files[0]) {
+                        if (!confirm('您尚未选择图片文件，是否确认继续？')) {
+                            e.preventDefault();
+                        }
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>
