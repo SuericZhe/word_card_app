@@ -12,14 +12,21 @@ import threading
 from contextlib import contextmanager
 import time
 import uuid
+import functools
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key'  # 用于session
+app.config['SECRET_KEY'] = 'your-secret-key-123456789'  # 修改为更安全的密钥
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['AUDIO_FOLDER'] = 'static/audio'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['LOG_FOLDER'] = 'logs'
 app.config['JSON_AS_ASCII'] = False  # 支持中文 JSON
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)  # 设置会话有效期为24小时
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_COOKIE_SECURE'] = False  # 在开发环境中设为False，生产环境设为True
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # 阻止JavaScript访问会话cookie
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # 防止CSRF攻击
+app.config['SESSION_USE_SIGNER'] = True  # 对cookie进行签名
 
 # 配置缓存
 app.config['CACHE_TYPE'] = 'simple'
@@ -201,14 +208,35 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'}
 # 添加IP锁定功能相关变量
 login_attempts = {}  # 存储登录尝试次数 {ip: {'attempts': 次数, 'locked_until': 时间}}
 
-def login_required(f):
-    """验证登录状态的装饰器"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'authenticated' not in session:
-            return redirect(url_for('login', next=request.url))
-        return f(*args, **kwargs)
-    return decorated_function
+def login_required(view):
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if 'authenticated' not in session or not session['authenticated']:
+            # 用户未登录，重定向到登录页面
+            app.logger.info(f"访问受保护的路由 {request.path} 被拒绝: 未登录")
+            return redirect(url_for('login', next=request.path))
+        
+        # 检查会话是否过期（超过24小时）
+        if 'login_time' in session:
+            login_time = datetime.fromisoformat(session['login_time'])
+            time_elapsed = datetime.now() - login_time
+            app.logger.info(f"验证会话: 登录时间={login_time}, 已经过时间={time_elapsed}")
+            
+            if time_elapsed >= timedelta(hours=24):
+                # 会话已过期，清除会话并重定向到登录页面
+                app.logger.info("会话已过期，清除会话")
+                session.clear()
+                flash('您的登录已过期，请重新登录', 'info')
+                return redirect(url_for('login', next=request.path))
+        else:
+            app.logger.warning("会话中缺少登录时间信息")
+            session.clear()
+            return redirect(url_for('login', next=request.path))
+        
+        # 通过验证，继续执行原始视图函数
+        app.logger.info(f"通过验证，允许访问: {request.path}")
+        return view(**kwargs)
+    return wrapped_view
 
 def init_db():
     # 使用直接连接而不是上下文管理器
@@ -510,7 +538,11 @@ def upload():
     categories = get_categories()
     default_category = request.args.get('category', '')
     today = datetime.now().strftime('%Y-%m-%d')
-    return render_template('upload.html', categories=categories, selected_category=default_category, today=today)
+    return render_template('upload.html', 
+                         categories=categories, 
+                         selected_category=default_category, 
+                         today=today,
+                         last_category=default_category)  # 添加 last_category 参数
 
 @app.route('/review/<int:id>')
 @login_required
@@ -728,22 +760,61 @@ def edit(id, conn):
 # 添加登出路由
 @app.route('/logout')
 def logout():
-    session.pop('authenticated', None)
-    return redirect(url_for('index'))
+    app.logger.info(f"用户登出，之前的会话状态: {session}")
+    # 清除会话
+    session.clear()
+    # 创建响应
+    response = redirect(url_for('login'))
+    # 删除所有会话相关的cookie
+    response.delete_cookie('session')
+    # 显示登出消息
+    flash('您已成功登出', 'info')
+    app.logger.info("会话已清除，用户已登出")
+    return response
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
     attempts = 0
     
+    app.logger.info(f"登录请求开始，会话状态: {session}")
+    
+    # 检查用户是否已经登录
+    if 'authenticated' in session and session['authenticated'] and 'login_time' in session:
+        # 检查登录时间，如果超过24小时则需要重新登录
+        login_time = datetime.fromisoformat(session['login_time'])
+        time_elapsed = datetime.now() - login_time
+        app.logger.info(f"用户已登录，登录时间: {login_time}, 已经过时间: {time_elapsed}")
+        
+        if time_elapsed < timedelta(hours=24):
+            # 如果请求是直接访问登录页面，则重定向到首页
+            if not request.args.get('next'):
+                app.logger.info("用户已登录且直接访问登录页，重定向到首页")
+                return redirect(url_for('index'))
+            # 如果是由其他页面重定向过来的，则重定向到那个页面
+            next_page = request.args.get('next')
+            if next_page and next_page.startswith('/'):
+                app.logger.info(f"用户已登录，重定向到目标页面: {next_page}")
+                return redirect(next_page)
+            return redirect(url_for('index'))
+        else:
+            # 会话已过期，清除会话
+            app.logger.info("会话已过期，清除会话")
+            session.clear()
+            flash('您的登录已过期，请重新登录', 'info')
+    else:
+        app.logger.info("用户未登录或会话信息不完整")
+    
     # 获取客户端IP
     client_ip = request.remote_addr
+    app.logger.info(f"客户端IP: {client_ip}")
     
     # 检查是否被锁定
     if client_ip in login_attempts and 'locked_until' in login_attempts[client_ip]:
         locked_until = login_attempts[client_ip]['locked_until']
         if datetime.now() < locked_until:
             remaining = int((locked_until - datetime.now()).total_seconds() / 3600)
+            app.logger.info(f"IP已被锁定: {client_ip}, 剩余锁定时间: {remaining}小时")
             return render_template('login.html', 
                                   error=f'此IP已被锁定，请在{remaining}小时后再试', 
                                   attempts=3)
@@ -751,6 +822,7 @@ def login():
     # 处理POST请求（登录表单提交）
     if request.method == 'POST':
         password = request.form.get('password')
+        app.logger.info(f"接收到登录表单提交，密码长度: {len(password) if password else 0}")
         
         # 初始化IP尝试记录
         if client_ip not in login_attempts:
@@ -764,30 +836,60 @@ def login():
                 del login_attempts[client_ip]['locked_until']
             
             # 设置会话
+            session.clear()
             session['authenticated'] = True
+            session['login_time'] = datetime.now().isoformat()  # 记录登录时间
+            session.permanent = True  # 启用长期会话，但仍受PERMANENT_SESSION_LIFETIME限制
+            app.logger.info(f'用户登录成功: {client_ip}, 会话信息: {session}')
             
-            # 重定向到下一个URL或首页
+            # 强制设置cookie，确保未来请求包含会话信息
             next_page = request.args.get('next')
             if next_page and next_page.startswith('/'):
+                app.logger.info(f"登录成功，重定向到: {next_page}")
                 return redirect(next_page)
+            app.logger.info("登录成功，重定向到首页")
             return redirect(url_for('index'))
         else:
             # 验证失败，增加尝试次数
             login_attempts[client_ip]['attempts'] += 1
             attempts = login_attempts[client_ip]['attempts']
+            app.logger.warning(f'用户登录失败: {client_ip}, 尝试次数: {attempts}, 输入密码: {password}')
             
             # 超过3次锁定24小时
             if attempts >= 3:
                 locked_until = datetime.now() + timedelta(hours=24)
                 login_attempts[client_ip]['locked_until'] = locked_until
                 error = '密码错误次数过多，此IP已被锁定24小时'
+                app.logger.warning(f'IP已被锁定: {client_ip}, 至: {locked_until}')
             else:
                 error = f'密码错误，请重试。剩余尝试次数: {3 - attempts}'
     
     # 返回登录页面
+    app.logger.info(f"返回登录页面, 错误信息: {error}, 尝试次数: {attempts}")
     return render_template('login.html', error=error, attempts=attempts)
 
+@app.before_request
+def check_session():
+    """在每个请求之前检查会话状态"""
+    if request.endpoint != 'static' and request.endpoint != 'login' and request.endpoint != 'logout':
+        app.logger.info(f"请求路径: {request.path}, 会话状态: {'已登录' if 'authenticated' in session and session['authenticated'] else '未登录'}")
+        if 'authenticated' in session and session['authenticated'] and 'login_time' in session:
+            login_time = datetime.fromisoformat(session['login_time'])
+            time_elapsed = datetime.now() - login_time
+            app.logger.info(f"会话信息: 登录时间={login_time}, 已经过时间={time_elapsed}")
+
 if __name__ == '__main__':
+    # 清除所有会话数据
+    session_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'flask_session')
+    if os.path.exists(session_dir):
+        for file in os.listdir(session_dir):
+            try:
+                os.remove(os.path.join(session_dir, file))
+                app.logger.info(f"已删除会话文件: {file}")
+            except Exception as e:
+                app.logger.error(f"删除会话文件失败: {file}, 错误: {str(e)}")
+    
+    # 初始化数据库和目录
     if not os.path.exists('database.db'):
         init_db()
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
