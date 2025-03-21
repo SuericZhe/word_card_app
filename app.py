@@ -13,6 +13,7 @@ from contextlib import contextmanager
 import time
 import uuid
 import functools
+from PIL import Image
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-123456789'  # 修改为更安全的密钥
@@ -29,9 +30,10 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # 防止CSRF攻击
 app.config['SESSION_USE_SIGNER'] = True  # 对cookie进行签名
 
 # 配置缓存
-app.config['CACHE_TYPE'] = 'simple'
-app.config['CACHE_DEFAULT_TIMEOUT'] = 300  # 5分钟缓存
-cache = Cache(app)
+cache = Cache(app, config={
+    'CACHE_TYPE': 'SimpleCache',  # 简单内存缓存
+    'CACHE_DEFAULT_TIMEOUT': 300  # 默认缓存时间5分钟
+})
 
 # 数据库连接池
 class DatabasePool:
@@ -158,6 +160,8 @@ def delete_file(filename, folder):
             
             # 组合完整的文件路径
             file_path = os.path.join(folder, category_path, file_basename)
+            # 确保路径使用正斜杠
+            file_path = file_path.replace('\\', '/')
             
             app.logger.info(f'尝试删除文件: {file_path}')
             if os.path.exists(file_path):
@@ -304,18 +308,25 @@ def calculate_next_review_date(review_count):
 @app.route('/manage')
 @login_required
 def manage():
+    conn = get_db()
+    c = conn.cursor()
+    
     try:
-        conn = get_db()
-        c = conn.cursor()
-        # 使用索引优化的查询
-        contents = c.execute('''SELECT * FROM contents 
-                              ORDER BY learn_date DESC, category, id DESC 
-                              LIMIT 100''').fetchall()
-        app.logger.info(f'成功获取内容列表，共 {len(contents)} 条记录')
+        c.execute('SELECT * FROM contents ORDER BY id DESC')
+        contents = c.fetchall()
+        
+        # 标准化图片路径，确保使用正斜杠
+        for content in contents:
+            if content['content_image']:
+                content['content_image'] = content['content_image'].replace('\\', '/')
+            if content['example_image']:
+                content['example_image'] = content['example_image'].replace('\\', '/')
+        
+        app.logger.info(f"成功获取内容列表，共 {len(contents)} 条记录")
         return render_template('manage.html', contents=contents, categories=CATEGORIES)
     except Exception as e:
-        app.logger.error(f'管理页面加载失败: {str(e)}')
-        flash('加载失败，请稍后重试', 'error')
+        app.logger.error(f"获取内容列表失败: {str(e)}")
+        flash(f"获取内容列表失败: {str(e)}", 'error')
         return render_template('manage.html', contents=[], categories=CATEGORIES)
 
 @app.route('/manage2')
@@ -421,6 +432,8 @@ def upload():
             
             # 创建一个特定目录来保存上传的图片
             upload_folder = os.path.join(app.static_folder, f'uploads/{category}')
+            # 确保路径使用正斜杠
+            upload_folder = upload_folder.replace('\\', '/')
             os.makedirs(upload_folder, exist_ok=True)
             
             # 生成唯一文件名
@@ -442,10 +455,18 @@ def upload():
                 file_ext = os.path.splitext(file.filename)[1].lower()
                 content_image_filename = f"{timestamp}_{random_id}_content{file_ext}"
                 file_path = os.path.join(upload_folder, content_image_filename)
+                # 确保路径使用正斜杠
+                file_path = file_path.replace('\\', '/')
                 file.save(file_path)
                 app.logger.info(f"已上传内容图片: {file_path}")
-                # 修复路径，不要再添加uploads前缀
-                content_image_path = f'{category}/{content_image_filename}'
+                
+                # 优化图片
+                optimized_path = optimize_image(file_path, quality=85, max_size=(800, 800))
+                # 获取优化后的文件名（可能已更改为.webp）
+                optimized_filename = os.path.basename(optimized_path)
+                # 存储相对路径，包含分类目录
+                content_image_path = f'{category}/{optimized_filename}'
+                app.logger.info(f"已优化内容图片: {optimized_path}, 存储路径: {content_image_path}")
             else:
                 flash('不支持的文件类型，仅支持图片文件', 'danger')
                 return redirect(request.url)
@@ -457,15 +478,21 @@ def upload():
                 if file and file.filename != '':
                     # 创建音频目录
                     audio_folder = os.path.join(app.static_folder, f'audio/{category}')
+                    # 确保路径使用正斜杠
+                    audio_folder = audio_folder.replace('\\', '/')
                     os.makedirs(audio_folder, exist_ok=True)
                     
                     file_ext = os.path.splitext(file.filename)[1].lower()
                     content_audio_filename = f"{timestamp}_{random_id}_content_audio{file_ext}"
                     file_path = os.path.join(audio_folder, content_audio_filename)
+                    # 确保路径使用正斜杠
+                    file_path = file_path.replace('\\', '/')
                     file.save(file_path)
                     app.logger.info(f"已上传内容音频: {file_path}")
                     # 修复路径，不要再添加audio前缀
+                    content_audio_filename = os.path.basename(file_path)
                     content_audio_path = f'{category}/{content_audio_filename}'
+                    app.logger.info(f"音频存储路径: {content_audio_path}")
             
             # 处理例句图片上传
             example_image_path = ''
@@ -476,10 +503,18 @@ def upload():
                         file_ext = os.path.splitext(file.filename)[1].lower()
                         example_image_filename = f"{timestamp}_{random_id}_example{file_ext}"
                         file_path = os.path.join(upload_folder, example_image_filename)
+                        # 确保路径使用正斜杠
+                        file_path = file_path.replace('\\', '/')
                         file.save(file_path)
                         app.logger.info(f"已上传例句图片: {file_path}")
-                        # 修复路径，不要再添加uploads前缀
-                        example_image_path = f'{category}/{example_image_filename}'
+                        
+                        # 优化例句图片
+                        optimized_path = optimize_image(file_path, quality=85, max_size=(800, 800))
+                        # 获取优化后的文件名
+                        optimized_filename = os.path.basename(optimized_path)
+                        # 存储相对路径，包含分类目录
+                        example_image_path = f'{category}/{optimized_filename}'
+                        app.logger.info(f"已优化例句图片: {optimized_path}, 存储路径: {example_image_path}")
             
             # 处理例句音频上传
             example_audio_path = ''
@@ -488,22 +523,28 @@ def upload():
                 if file and file.filename != '':
                     # 创建音频目录
                     audio_folder = os.path.join(app.static_folder, f'audio/{category}')
+                    # 确保路径使用正斜杠
+                    audio_folder = audio_folder.replace('\\', '/')
                     os.makedirs(audio_folder, exist_ok=True)
                     
                     file_ext = os.path.splitext(file.filename)[1].lower()
                     example_audio_filename = f"{timestamp}_{random_id}_example_audio{file_ext}"
                     file_path = os.path.join(audio_folder, example_audio_filename)
+                    # 确保路径使用正斜杠
+                    file_path = file_path.replace('\\', '/')
                     file.save(file_path)
                     app.logger.info(f"已上传例句音频: {file_path}")
                     # 修复路径，不要再添加audio前缀
+                    example_audio_filename = os.path.basename(file_path)
                     example_audio_path = f'{category}/{example_audio_filename}'
+                    app.logger.info(f"音频存储路径: {example_audio_path}")
+            
+            # 获取学习日期参数
+            learn_date = request.form.get('learn_date', datetime.now().strftime('%Y-%m-%d'))
             
             # 添加到数据库
             conn = get_db_connection()
             cursor = conn.cursor()
-            
-            # 获取学习日期
-            learn_date = request.form.get('learn_date', datetime.now().strftime('%Y-%m-%d'))
             
             cursor.execute(
                 '''INSERT INTO contents 
@@ -607,8 +648,8 @@ def index():
         pass  # 连接会在线程结束时自动关闭
 
 @app.route('/category/<category>')
-@cache.memoize(60)  # 1分钟缓存，基于参数
 @login_required
+@cache.cached(timeout=60, query_string=True)  # 添加1分钟缓存，包含查询参数
 def category_view(category):
     if category not in CATEGORIES:
         flash('无效的分类', 'error')
@@ -617,53 +658,70 @@ def category_view(category):
     conn = get_db()
     c = conn.cursor()
     today = datetime.now().strftime('%Y-%m-%d')
+    show_all = request.args.get('show_all', 'false').lower() == 'true'
     
-    try:
-        # 使用单个查询获取所有内容
-        c.execute('''SELECT *, 
-                    CASE 
-                        WHEN learn_date = ? THEN 'new'
-                        ELSE 'review'
-                    END as content_type
-                    FROM contents 
-                    WHERE category = ? 
-                    AND (learn_date = ? OR 
-                         (next_review_date <= ? AND next_review_date IS NOT NULL))
-                    ORDER BY content_type DESC, id DESC''',
-                 (today, category, today, today))
-        
-        contents = c.fetchall()
-        new_items = [content for content in contents if content['content_type'] == 'new']
-        review_items = [content for content in contents if content['content_type'] == 'review']
-        
-        return render_template('category_view.html',
-                             category=category,
-                             category_name=CATEGORIES[category],
-                             new_items=new_items,
-                             review_items=review_items)
-    finally:
-        pass  # 连接会在线程结束时自动关闭
-
-# 添加音频文件访问路由
-    # 获取新内容（今天的学习内容）
-    today = datetime.now().strftime('%Y-%m-%d')
-    new_items = c.execute('''SELECT * FROM contents 
-                            WHERE category = ? AND learn_date = ?''',
-                         (category, today)).fetchall()
+    # 优化查询：使用一个SQL查询获取所有数据
+    if show_all:
+        # 获取所有内容
+        c.execute('''
+            SELECT *, 
+                CASE 
+                    WHEN learn_date = ? THEN 'new'
+                    WHEN next_review_date <= ? AND next_review_date IS NOT NULL THEN 'review'
+                    ELSE 'past'
+                END as item_type
+            FROM contents 
+            WHERE category = ?
+            ORDER BY 
+                CASE item_type 
+                    WHEN 'new' THEN 1
+                    WHEN 'review' THEN 2 
+                    ELSE 3
+                END,
+                id DESC
+        ''', (today, today, category))
+    else:
+        # 只获取今天的新内容和需要复习的内容
+        c.execute('''
+            SELECT *, 
+                CASE 
+                    WHEN learn_date = ? THEN 'new'
+                    ELSE 'review'
+                END as item_type
+            FROM contents 
+            WHERE category = ? AND (learn_date = ? OR (next_review_date <= ? AND next_review_date IS NOT NULL))
+            ORDER BY 
+                CASE item_type 
+                    WHEN 'new' THEN 1
+                    ELSE 2
+                END,
+                id DESC
+        ''', (today, category, today, today))
     
-    # 获取需要复习的内容
-    review_items = c.execute('''SELECT * FROM contents 
-                               WHERE category = ? AND next_review_date <= ? 
-                               AND next_review_date IS NOT NULL''',
-                            (category, today)).fetchall()
+    all_items = c.fetchall()
     
-    conn.close()
+    # 标准化图片路径
+    for item in all_items:
+        if item['content_image']:
+            item['content_image'] = item['content_image'].replace('\\', '/')
+        if item['example_image']:
+            item['example_image'] = item['example_image'].replace('\\', '/')
     
-    return render_template('category_view.html',
-                         category=category,
-                         category_name=CATEGORIES[category],
-                         new_items=new_items,
-                         review_items=review_items)
+    # 根据类型分离项目
+    new_items = [item for item in all_items if item['item_type'] == 'new']
+    review_items = [item for item in all_items if item['item_type'] == 'review']
+    
+    # 如果显示所有内容，还包括过去的内容
+    if show_all:
+        past_items = [item for item in all_items if item['item_type'] == 'past']
+        new_items.extend(past_items)  # 将过去的内容添加到新内容中显示
+    
+    return render_template('category_view.html', 
+                         category=category, 
+                         category_name=CATEGORIES[category], 
+                         new_items=new_items, 
+                         review_items=review_items,
+                         show_all=show_all)
 
 # 添加音频文件访问路由
 @app.route('/static/audio/<path:filename>')
@@ -731,17 +789,22 @@ def edit(id, conn):
                     {'mp3', 'wav'}
                 )
         
+        # 获取学习日期参数
+        learn_date = request.form.get('learn_date', content['learn_date'])
+        
         # 更新数据库
         conn.execute('''UPDATE contents 
                        SET content_image = ?,
                            content_audio = ?,
                            example_image = ?,
-                           example_audio = ?
+                           example_audio = ?,
+                           learn_date = ?
                        WHERE id = ?''',
                     (content_image_filename,
                      content_audio_filename,
                      example_image_filename,
                      example_audio_filename,
+                     learn_date,
                      id))
         conn.commit()
         
@@ -877,6 +940,176 @@ def check_session():
             login_time = datetime.fromisoformat(session['login_time'])
             time_elapsed = datetime.now() - login_time
             app.logger.info(f"会话信息: 登录时间={login_time}, 已经过时间={time_elapsed}")
+
+# 添加到app.py中的图片处理部分
+def optimize_image(file_path, quality=85, max_size=(800, 800)):
+    """压缩和优化图片"""
+    try:
+        # 获取文件名和扩展名
+        file_dir = os.path.dirname(file_path)
+        file_name = os.path.basename(file_path)
+        file_name_without_ext = os.path.splitext(file_name)[0]
+        
+        # 确保目录分隔符是正斜杠
+        file_dir = file_dir.replace('\\', '/')
+        
+        img = Image.open(file_path)
+        # 调整大小
+        img.thumbnail(max_size, Image.LANCZOS)
+        # 保存为优化的WebP格式，但使用相同的文件名
+        webp_path = os.path.join(file_dir, file_name_without_ext + '.webp')
+        img.save(webp_path, 'WEBP', quality=quality)
+        # 删除原始图片
+        if os.path.abspath(file_path) != os.path.abspath(webp_path):
+            os.remove(file_path)
+        return webp_path
+    except Exception as e:
+        app.logger.error(f"图片优化失败: {str(e)}")
+        return file_path
+
+# 修改app.py中的静态文件路由
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    response = send_from_directory(app.static_folder, filename)
+    # 添加缓存控制头
+    response.headers['Cache-Control'] = 'public, max-age=31536000'
+    return response
+
+@app.route('/optimize_all_images')
+@login_required
+def optimize_all_images():
+    """批量优化所有现有图片，减小文件大小，提高加载速度"""
+    try:
+        # 获取所有图片路径
+        conn = get_db()
+        c = conn.cursor()
+        c.execute('SELECT id, content_image, example_image FROM contents')
+        all_images = c.fetchall()
+        
+        # 统计信息
+        total_images = 0
+        processed_images = 0
+        failed_images = 0
+        space_saved = 0  # 节省的空间（字节）
+        
+        for item in all_images:
+            # 处理内容图片
+            if item['content_image']:
+                total_images += 1
+                try:
+                    # 获取原始图片路径
+                    img_path = os.path.join(app.static_folder, 'uploads', item['content_image'])
+                    if os.path.exists(img_path):
+                        # 获取原始文件大小
+                        original_size = os.path.getsize(img_path)
+                        
+                        # 优化图片
+                        optimized_path = optimize_image(img_path, quality=85, max_size=(800, 800))
+                        
+                        # 获取优化后的文件大小
+                        if os.path.exists(optimized_path):
+                            new_size = os.path.getsize(optimized_path)
+                            space_saved += (original_size - new_size)
+                            
+                            # 更新数据库中的文件路径（如果文件名发生了变化）
+                            new_filename = os.path.basename(optimized_path)
+                            if os.path.basename(img_path) != new_filename:
+                                # 确保保持路径结构一致
+                                old_path_parts = item['content_image'].split('/')
+                                if len(old_path_parts) > 1:
+                                    # 保留分类目录
+                                    category_dir = old_path_parts[0]
+                                    # 使用正斜杠，避免使用Windows反斜杠
+                                    new_path = f'{category_dir}/{new_filename}'
+                                    # 确保路径中不含有反斜杠
+                                    new_path = new_path.replace('\\', '/')
+                                else:
+                                    new_path = new_filename
+                                
+                                app.logger.info(f"更新图片路径: 从 {item['content_image']} 到 {new_path}")
+                                c.execute('UPDATE contents SET content_image = ? WHERE id = ?', 
+                                         (new_path, item['id']))
+                            
+                            processed_images += 1
+                    else:
+                        app.logger.warning(f"图片不存在: {img_path}")
+                        failed_images += 1
+                except Exception as e:
+                    app.logger.error(f"优化图片失败: {img_path}, 错误: {str(e)}")
+                    failed_images += 1
+            
+            # 处理例句图片
+            if item['example_image']:
+                total_images += 1
+                try:
+                    # 获取原始图片路径
+                    img_path = os.path.join(app.static_folder, 'uploads', item['example_image'])
+                    if os.path.exists(img_path):
+                        # 获取原始文件大小
+                        original_size = os.path.getsize(img_path)
+                        
+                        # 优化图片
+                        optimized_path = optimize_image(img_path, quality=85, max_size=(800, 800))
+                        
+                        # 获取优化后的文件大小
+                        if os.path.exists(optimized_path):
+                            new_size = os.path.getsize(optimized_path)
+                            space_saved += (original_size - new_size)
+                            
+                            # 更新数据库中的文件路径（如果文件名发生了变化）
+                            new_filename = os.path.basename(optimized_path)
+                            if os.path.basename(img_path) != new_filename:
+                                # 确保保持路径结构一致
+                                old_path_parts = item['example_image'].split('/')
+                                if len(old_path_parts) > 1:
+                                    # 保留分类目录
+                                    category_dir = old_path_parts[0]
+                                    # 使用正斜杠，避免使用Windows反斜杠
+                                    new_path = f'{category_dir}/{new_filename}'
+                                    # 确保路径中不含有反斜杠
+                                    new_path = new_path.replace('\\', '/')
+                                else:
+                                    new_path = new_filename
+                                
+                                app.logger.info(f"更新图片路径: 从 {item['example_image']} 到 {new_path}")
+                                c.execute('UPDATE contents SET example_image = ? WHERE id = ?', 
+                                         (new_path, item['id']))
+                            
+                            processed_images += 1
+                    else:
+                        app.logger.warning(f"图片不存在: {img_path}")
+                        failed_images += 1
+                except Exception as e:
+                    app.logger.error(f"优化图片失败: {img_path}, 错误: {str(e)}")
+                    failed_images += 1
+        
+        # 提交数据库更改
+        conn.commit()
+        
+        # 清除缓存
+        cache.clear()
+        
+        # 计算总节省空间（MB）
+        space_saved_mb = space_saved / (1024 * 1024)
+        
+        # 返回优化结果
+        return render_template('optimize_result.html', 
+                             total=total_images,
+                             processed=processed_images,
+                             failed=failed_images,
+                             space_saved=space_saved_mb)
+    except Exception as e:
+        app.logger.error(f"批量优化图片失败: {str(e)}")
+        return f"""
+        <html>
+        <head><title>优化失败</title></head>
+        <body>
+            <h1>批量优化失败</h1>
+            <p>错误信息: {str(e)}</p>
+            <a href="/manage">返回管理页面</a>
+        </body>
+        </html>
+        """
 
 if __name__ == '__main__':
     # 清除所有会话数据
