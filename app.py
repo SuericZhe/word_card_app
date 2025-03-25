@@ -575,8 +575,8 @@ def review(id):
         pass  # 连接会在线程结束时自动关闭
 
 @app.route('/')
-@cache.cached(timeout=60)  # 1分钟缓存
 @login_required
+@cache.cached(timeout=60)  # 1分钟缓存
 def index():
     conn = get_db()
     c = conn.cursor()
