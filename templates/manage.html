@@ -247,17 +247,8 @@
                 </div>
                 {% else %}
                 <div class="alert alert-success">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h4>内容管理</h4>
-                            <p class="mb-0">当前共有 {{ contents|length }} 个内容项。您可以预览、编辑或删除这些内容。</p>
-                        </div>
-                        <div>
-                            <a href="/optimize_all_images" class="btn btn-primary" onclick="return confirm('确定要优化所有图片吗？这将减小图片文件大小，提高页面加载速度。')">
-                                <i class="bi bi-speedometer2"></i> 优化所有图片
-                            </a>
-                        </div>
-                    </div>
+                    <h4>内容管理</h4>
+                    <p>当前共有 {{ contents|length }} 个内容项。您可以预览、编辑或删除这些内容。</p>
                 </div>
                 {% endif %}
             </div>
@@ -272,7 +263,7 @@
                         <span><i class="bi bi-repeat"></i> {{ content.review_count }}</span>
                     </div>
                     {% if content.content_image %}
-                    <img src="{{ url_for('static', filename=content.content_image.startswith('uploads/') and content.content_image or 'uploads/' + content.content_image) }}" alt="内容图片" class="preview-image">
+                    <img src="/static/uploads/{{ content.content_image }}" alt="内容图片" class="preview-image">
                     {% endif %}
                     <div class="action-buttons">
                         <button class="btn btn-preview" onclick="previewContent(this)" data-content='{{ content|tojson }}'>
@@ -342,36 +333,28 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="content_image" class="form-label">内容图片</label>
-                                    <div class="edit-form-group">
-                                        <label>内容图片</label>
-                                        <input type="file" class="form-control" name="content_image" accept="image/*" onchange="previewFile(this, 'editContentImagePreview')">
-                                        <img id="editContentImagePreview" class="edit-preview">
-                                    </div>
+                        <div class="edit-form-group">
+                            <label>内容图片</label>
+                            <input type="file" class="form-control" name="content_image" accept="image/*" onchange="previewFile(this, 'editContentImagePreview')">
+                            <img id="editContentImagePreview" class="edit-preview">
+                        </div>
 
-                                    <div class="edit-form-group">
-                                        <label>内容音频</label>
-                                        <input type="file" class="form-control" name="content_audio" accept="audio/*">
-                                        <audio id="editContentAudioPreview" controls class="mt-2"></audio>
-                                    </div>
+                        <div class="edit-form-group">
+                            <label>内容音频</label>
+                            <input type="file" class="form-control" name="content_audio" accept="audio/*">
+                            <audio id="editContentAudioPreview" controls class="mt-2"></audio>
+                        </div>
 
-                                    <div class="edit-form-group">
-                                        <label>例句图片</label>
-                                        <input type="file" class="form-control" name="example_image" accept="image/*" onchange="previewFile(this, 'editExampleImagePreview')">
-                                        <img id="editExampleImagePreview" class="edit-preview">
-                                    </div>
+                        <div class="edit-form-group">
+                            <label>例句图片</label>
+                            <input type="file" class="form-control" name="example_image" accept="image/*" onchange="previewFile(this, 'editExampleImagePreview')">
+                            <img id="editExampleImagePreview" class="edit-preview">
+                        </div>
 
-                                    <div class="edit-form-group">
-                                        <label>例句音频</label>
-                                        <input type="file" class="form-control" name="example_audio" accept="audio/*">
-                                        <audio id="editExampleAudioPreview" controls class="mt-2"></audio>
-                                    </div>
-
-                                    <div class="edit-form-group">
-                                        <label>学习日期</label>
-                                        <input type="date" class="form-control" name="learn_date" id="editLearnDate">
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="edit-form-group">
+                            <label>例句音频</label>
+                            <input type="file" class="form-control" name="example_audio" accept="audio/*">
+                            <audio id="editExampleAudioPreview" controls class="mt-2"></audio>
                         </div>
                     </form>
                 </div>
@@ -479,11 +462,6 @@
                 if (content.example_audio) {
                     document.getElementById('editExampleAudioPreview').src = `/static/audio/${content.example_audio}`;
                     document.getElementById('editExampleAudioPreview').style.display = 'block';
-                }
-                
-                // 设置学习日期
-                if (content.learn_date) {
-                    document.getElementById('editLearnDate').value = content.learn_date;
                 }
                 
                 modal.show();
