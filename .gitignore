@@ -9,6 +9,7 @@ database.db
 *.gif
 *.bmp
 *.jpeg
+*.mp3
 
 # 忽略 uploads 目录（如果图片存储在此）
 static/uploads/
@@ -16,3 +17,10 @@ static/uploads/
 # 忽略 audio 目录（如果音频存储在此）
 static/audio/
 
+
+
+logs/
+
+results/
+
+/coze/__pycache__
