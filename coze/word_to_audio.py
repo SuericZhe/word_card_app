@@ -9,11 +9,17 @@
 import os
 import sys
 import json
-from datetime import datetime
 import time
 import uuid
-from coze.douyin_tts import DouyinTTS
-from coze.feishu_file_utils import FeishuFileUtils
+from datetime import datetime
+
+# 确保能够导入同级目录模块
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
+from douyin_tts import DouyinTTS
+from feishu_file_utils import FeishuFileUtils
 
 class WordToAudioWorkflow:
     """

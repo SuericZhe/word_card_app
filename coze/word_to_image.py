@@ -1,10 +1,20 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import os
+import sys
 import json
 from datetime import datetime
 import time
 import signal
-from coze.coze_api import CozeAPI
-import coze.config as config
+
+# 确保能够导入同级目录模块
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
+from coze_api import CozeAPI
+import config as config
 import re
 
 class WordToImageWorkflow:

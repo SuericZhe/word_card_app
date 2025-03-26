@@ -21,15 +21,20 @@ from datetime import datetime
 import logging
 import uuid
 
+# 确保能够导入同级目录模块
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
 # 导入所需的工作流模块
-from coze.word_to_sentence import WordToSentenceWorkflow
-from coze.word_to_image import WordToImageWorkflow
-from coze.sentence_to_image import SentenceToImageWorkflow
-from coze.word_to_audio import WordToAudioWorkflow
-from coze.add_text_to_pic import add_text_to_image, add_text_and_upload_to_feishu
-from coze.douyin_tts import DouyinTTS
-from coze.feishu_file_utils import FeishuFileUtils
-from coze.standalone_text_to_pic import TextToPicture
+from word_to_sentence import WordToSentenceWorkflow
+from word_to_image import WordToImageWorkflow
+from sentence_to_image import SentenceToImageWorkflow
+from word_to_audio import WordToAudioWorkflow
+from add_text_to_pic import add_text_to_image, add_text_and_upload_to_feishu
+from douyin_tts import DouyinTTS
+from feishu_file_utils import FeishuFileUtils
+from standalone_text_to_pic import TextToPicture
 
 # 配置日志
 logging.basicConfig(

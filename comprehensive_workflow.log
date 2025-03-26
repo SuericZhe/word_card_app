@@ -27,3 +27,128 @@
 2025-03-26 18:27:21,153 - ComprehensiveWorkflow - INFO - 全部 2 个单词处理完成，耗时：140.54秒
 2025-03-26 18:27:21,153 - ComprehensiveWorkflow - INFO - [complete] 全部 2 个单词处理完成 - 进度: 100%
 2025-03-26 18:27:21,155 - ComprehensiveWorkflow - INFO - 综合处理结果已保存到: C:\Users\Admin\Desktop\word_card_app\results\comprehensive\comprehensive_test_comprehensive_20250326_182500.json
+2025-03-26 18:38:05,555 - __main__ - INFO - 开始测试处理单词: bus, car
+2025-03-26 18:38:05,557 - ComprehensiveWorkflow - INFO - 已确保数据库表结构存在: c:\Users\Admin\Desktop\word_card_app\database.db
+2025-03-26 18:38:05,557 - ComprehensiveWorkflow - INFO - [sentences] 为 2 个单词生成例句和作文 - 进度: 0%
+2025-03-26 18:38:05,557 - __main__ - INFO - 进度更新: {"stage": "sentences", "message": "为 2 个单词生成例句和作文", "progress": 0, "word": null}
+2025-03-26 18:38:21,485 - ComprehensiveWorkflow - INFO - [essay] 处理作文 - 进度: 20%
+2025-03-26 18:38:21,485 - __main__ - INFO - 进度更新: {"stage": "essay", "message": "处理作文", "progress": 20, "word": null}
+2025-03-26 18:38:21,506 - ComprehensiveWorkflow - ERROR - 处理作文时出错: type object 'FeishuFileUtils' has no attribute 'upload_image'
+2025-03-26 18:38:21,506 - ComprehensiveWorkflow - INFO - [essay] 作文处理完成 - 进度: 30%
+2025-03-26 18:38:21,506 - __main__ - INFO - 进度更新: {"stage": "essay", "message": "作文处理完成", "progress": 30, "word": null}
+2025-03-26 18:38:21,507 - ComprehensiveWorkflow - INFO - [word] 处理单词 1/2: bus - 进度: 30%
+2025-03-26 18:38:21,507 - __main__ - INFO - 进度更新: {"stage": "word", "message": "处理单词 1/2: bus", "progress": 30, "word": "bus"}
+2025-03-26 18:38:21,508 - ComprehensiveWorkflow - INFO - 为单词 'bus' 生成图片
+2025-03-26 18:38:49,341 - Lark - DEBUG - POST https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal 200, headers: {"User-Agent": "oapi-sdk-python/v1.4.12"}, params: [], body: {"app_id": "cli_a769cd7901ac100e", "app_secret": "JaCmFgaAoqvqYnvEiwKBQb2DW5F7CzFf"}
+2025-03-26 18:38:50,304 - Lark - DEBUG - POST https://open.feishu.cn/open-apis/im/v1/images 200, headers: {"User-Agent": "oapi-sdk-python/v1.4.12", "Content-Type": "multipart/form-data; boundary=8edb6420b1d0431db6c79d059661e36f", "Authorization": "Bearer t-g1043qipEO7ILNHML26ZXWQDKUCXVIMQSNA276HE"}, params: [], body: <MultipartEncoder: {'image_type': 'message', 'image': <_io.BufferedReader name='c:\\Users\\Admin\\Desktop\\word_card_app\\results\\captioned_bus.png'>}>
+2025-03-26 18:38:51,076 - ComprehensiveWorkflow - INFO - 为单词 'bus' 的例句生成图片
+2025-03-26 18:39:25,260 - Lark - DEBUG - POST https://open.feishu.cn/open-apis/im/v1/images 200, headers: {"User-Agent": "oapi-sdk-python/v1.4.12", "Content-Type": "multipart/form-data; boundary=81534bbb03a743d68da887570ebeac72", "Authorization": "Bearer t-g1043qipEO7ILNHML26ZXWQDKUCXVIMQSNA276HE"}, params: [], body: <MultipartEncoder: {'image_type': 'message', 'image': <_io.BufferedReader name='c:\\Users\\Admin\\Desktop\\word_card_app\\results\\captioned_the_bus_is_yellow!.png'>}>
+2025-03-26 18:39:26,099 - ComprehensiveWorkflow - INFO - 保存单词图片信息到数据库: bus
+2025-03-26 18:39:26,099 - ComprehensiveWorkflow - INFO - 保存句子信息到数据库: bus
+2025-03-26 18:39:26,100 - ComprehensiveWorkflow - INFO - 插入内容表: vehicles
+2025-03-26 18:39:26,102 - ComprehensiveWorkflow - INFO - 单词 bus 的处理结果已保存到数据库
+2025-03-26 18:39:26,102 - ComprehensiveWorkflow - INFO - [word] 单词 bus 处理完成 - 进度: 30%
+2025-03-26 18:39:26,102 - __main__ - INFO - 进度更新: {"stage": "word", "message": "单词 bus 处理完成", "progress": 30, "word": "bus"}
+2025-03-26 18:39:26,102 - ComprehensiveWorkflow - INFO - [word] 处理单词 2/2: car - 进度: 65%
+2025-03-26 18:39:26,102 - __main__ - INFO - 进度更新: {"stage": "word", "message": "处理单词 2/2: car", "progress": 65, "word": "car"}
+2025-03-26 18:39:26,103 - ComprehensiveWorkflow - INFO - 为单词 'car' 生成图片
+2025-03-26 18:40:01,209 - Lark - DEBUG - POST https://open.feishu.cn/open-apis/im/v1/images 200, headers: {"User-Agent": "oapi-sdk-python/v1.4.12", "Content-Type": "multipart/form-data; boundary=6fe9b244a932442992757889eab887a1", "Authorization": "Bearer t-g1043qipEO7ILNHML26ZXWQDKUCXVIMQSNA276HE"}, params: [], body: <MultipartEncoder: {'image_type': 'message', 'image': <_io.BufferedReader name='c:\\Users\\Admin\\Desktop\\word_card_app\\results\\captioned_car.png'>}>
+2025-03-26 18:40:02,081 - ComprehensiveWorkflow - INFO - 为单词 'car' 的例句生成图片
+2025-03-26 18:40:32,401 - Lark - DEBUG - POST https://open.feishu.cn/open-apis/im/v1/images 200, headers: {"User-Agent": "oapi-sdk-python/v1.4.12", "Content-Type": "multipart/form-data; boundary=780c6a424f88431b898a1785ad4ab3b8", "Authorization": "Bearer t-g1043qipEO7ILNHML26ZXWQDKUCXVIMQSNA276HE"}, params: [], body: <MultipartEncoder: {'image_type': 'message', 'image': <_io.BufferedReader name='c:\\Users\\Admin\\Desktop\\word_card_app\\results\\captioned_dad_drives_a_car..png'>}>
+2025-03-26 18:40:33,283 - ComprehensiveWorkflow - INFO - 保存单词图片信息到数据库: car
+2025-03-26 18:40:33,283 - ComprehensiveWorkflow - INFO - 保存句子信息到数据库: car
+2025-03-26 18:40:33,284 - ComprehensiveWorkflow - INFO - 更新内容表: vehicles
+2025-03-26 18:40:33,286 - ComprehensiveWorkflow - INFO - 单词 car 的处理结果已保存到数据库
+2025-03-26 18:40:33,286 - ComprehensiveWorkflow - INFO - [word] 单词 car 处理完成 - 进度: 65%
+2025-03-26 18:40:33,286 - __main__ - INFO - 进度更新: {"stage": "word", "message": "单词 car 处理完成", "progress": 65, "word": "car"}
+2025-03-26 18:40:33,287 - ComprehensiveWorkflow - INFO - 全部 2 个单词处理完成，耗时：147.73秒
+2025-03-26 18:40:33,287 - ComprehensiveWorkflow - INFO - [complete] 全部 2 个单词处理完成 - 进度: 100%
+2025-03-26 18:40:33,287 - __main__ - INFO - 进度更新: {"stage": "complete", "message": "全部 2 个单词处理完成", "progress": 100, "word": null}
+2025-03-26 18:40:33,288 - ComprehensiveWorkflow - INFO - 综合处理结果已保存到: c:\Users\Admin\Desktop\word_card_app\results\comprehensive\comprehensive_vehicles_20250326_183805.json
+2025-03-26 18:40:33,288 - __main__ - INFO - 处理完成，结果：{
+  "status": "success",
+  "words": [
+    {
+      "word": "bus",
+      "sentence": "The bus is yellow!",
+      "status": "success",
+      "category": "vehicles",
+      "timestamp": "20250326_183821",
+      "word_image": {
+        "word": "bus",
+        "status": "success",
+        "original_image_url": "https://s.coze.cn/t/43IFx1pR2sA/\\",
+        "local_image_path": "c:\\Users\\Admin\\Desktop\\word_card_app\\results\\word_images\\vehicles\\bus_20250326_183847.png",
+        "feishu_image_key": "img_v3_02ko_573b4647-00b3-46b2-a41a-5207265cd53g",
+        "local_audio_path": "C:\\Users\\Admin\\Desktop\\word_card_app\\static\\audio\\tts_bus_20250326183850_8d0b8736.mp3",
+        "feishu_audio_key": "file_v3_00ko_c9c68829-51cb-4968-9569-e3e9a2e4b93g",
+        "error": null
+      },
+      "sentence_image": {
+        "word": "bus",
+        "sentence": "The bus is yellow!",
+        "status": "success",
+        "sentence_image_url": "https://s.coze.cn/t/zfXbgqjCasQ/\\",
+        "local_image_path": "c:\\Users\\Admin\\Desktop\\word_card_app\\results\\sentence_images\\vehicles\\bus_sentence_20250326_183922.png",
+        "feishu_image_key": "img_v3_02ko_c72820fa-00fd-4b28-b9e1-e193f98e409g",
+        "local_audio_path": "C:\\Users\\Admin\\Desktop\\word_card_app\\static\\audio\\tts_The_bus_is_yellow__20250326183925_0aaee006.mp3",
+        "feishu_audio_key": "file_v3_00ko_60fdcd6c-11e6-4566-8e42-cd3bf58d2b2g",
+        "error": null
+      },
+      "error": null
+    },
+    {
+      "word": "car",
+      "sentence": "Dad drives a car.",
+      "status": "success",
+      "category": "vehicles",
+      "timestamp": "20250326_183926",
+      "word_image": {
+        "word": "car",
+        "status": "success",
+        "original_image_url": "https://s.coze.cn/t/3Y5oZUKsx_8/\\",
+        "local_image_path": "c:\\Users\\Admin\\Desktop\\word_card_app\\results\\word_images\\vehicles\\car_20250326_183957.png",
+        "feishu_image_key": "img_v3_02ko_820c60de-c42b-4570-be5a-9ccb67b28e9g",
+        "local_audio_path": "C:\\Users\\Admin\\Desktop\\word_card_app\\static\\audio\\tts_car_20250326184001_5227e010.mp3",
+        "feishu_audio_key": "file_v3_00ko_591737d9-129a-40d2-afb8-16a6cdf686fg",
+        "error": null
+      },
+      "sentence_image": {
+        "word": "car",
+        "sentence": "Dad drives a car.",
+        "status": "success",
+        "sentence_image_url": "https://s.coze.cn/t/2-Mto7krZJE/\\",
+        "local_image_path": "c:\\Users\\Admin\\Desktop\\word_card_app\\results\\sentence_images\\vehicles\\car_sentence_20250326_184028.png",
+        "feishu_image_key": "img_v3_02ko_80e6242b-195f-437a-b6f2-0f0320182d4g",
+        "local_audio_path": "C:\\Users\\Admin\\Desktop\\word_card_app\\static\\audio\\tts_Dad_drives_a_car__20250326184032_66533e96.mp3",
+        "feishu_audio_key": "file_v3_00ko_8cd4cd02-9514-472a-9be2-fe1dc9d5581g",
+        "error": null
+      },
+      "error": null
+    }
+  ],
+  "essay": {
+    "words": [
+      "bus",
+      "car"
+    ],
+    "essay": "Look at the bus! It is big. The car is red. We go to the park. Bus and car are fun!",
+    "status": "failed",
+    "local_image_path": "c:\\Users\\Admin\\Desktop\\word_card_app\\results\\essays\\vehicles\\essay_bus_car_20250326_183821.png",
+    "feishu_image_key": "",
+    "local_audio_path": "",
+    "feishu_audio_key": "",
+    "error": "type object 'FeishuFileUtils' has no attribute 'upload_image'"
+  },
+  "timestamp": "20250326_183805",
+  "category": "vehicles",
+  "error": null,
+  "stats": {
+    "total_words": 2,
+    "processed_words": 2,
+    "elapsed_time": 147.72907423973083,
+    "success_count": 2,
+    "failed_count": 0
+  }
+}
+2025-03-26 18:40:33,292 - __main__ - INFO - 结果已保存到: c:\Users\Admin\Desktop\word_card_app\coze\test_output\test_result.json

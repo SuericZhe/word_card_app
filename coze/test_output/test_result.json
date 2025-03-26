@@ -1,0 +1,86 @@
+{
+  "status": "success",
+  "words": [
+    {
+      "word": "bus",
+      "sentence": "The bus is yellow!",
+      "status": "success",
+      "category": "vehicles",
+      "timestamp": "20250326_183821",
+      "word_image": {
+        "word": "bus",
+        "status": "success",
+        "original_image_url": "https://s.coze.cn/t/43IFx1pR2sA/\\",
+        "local_image_path": "c:\\Users\\Admin\\Desktop\\word_card_app\\results\\word_images\\vehicles\\bus_20250326_183847.png",
+        "feishu_image_key": "img_v3_02ko_573b4647-00b3-46b2-a41a-5207265cd53g",
+        "local_audio_path": "C:\\Users\\Admin\\Desktop\\word_card_app\\static\\audio\\tts_bus_20250326183850_8d0b8736.mp3",
+        "feishu_audio_key": "file_v3_00ko_c9c68829-51cb-4968-9569-e3e9a2e4b93g",
+        "error": null
+      },
+      "sentence_image": {
+        "word": "bus",
+        "sentence": "The bus is yellow!",
+        "status": "success",
+        "sentence_image_url": "https://s.coze.cn/t/zfXbgqjCasQ/\\",
+        "local_image_path": "c:\\Users\\Admin\\Desktop\\word_card_app\\results\\sentence_images\\vehicles\\bus_sentence_20250326_183922.png",
+        "feishu_image_key": "img_v3_02ko_c72820fa-00fd-4b28-b9e1-e193f98e409g",
+        "local_audio_path": "C:\\Users\\Admin\\Desktop\\word_card_app\\static\\audio\\tts_The_bus_is_yellow__20250326183925_0aaee006.mp3",
+        "feishu_audio_key": "file_v3_00ko_60fdcd6c-11e6-4566-8e42-cd3bf58d2b2g",
+        "error": null
+      },
+      "error": null
+    },
+    {
+      "word": "car",
+      "sentence": "Dad drives a car.",
+      "status": "success",
+      "category": "vehicles",
+      "timestamp": "20250326_183926",
+      "word_image": {
+        "word": "car",
+        "status": "success",
+        "original_image_url": "https://s.coze.cn/t/3Y5oZUKsx_8/\\",
+        "local_image_path": "c:\\Users\\Admin\\Desktop\\word_card_app\\results\\word_images\\vehicles\\car_20250326_183957.png",
+        "feishu_image_key": "img_v3_02ko_820c60de-c42b-4570-be5a-9ccb67b28e9g",
+        "local_audio_path": "C:\\Users\\Admin\\Desktop\\word_card_app\\static\\audio\\tts_car_20250326184001_5227e010.mp3",
+        "feishu_audio_key": "file_v3_00ko_591737d9-129a-40d2-afb8-16a6cdf686fg",
+        "error": null
+      },
+      "sentence_image": {
+        "word": "car",
+        "sentence": "Dad drives a car.",
+        "status": "success",
+        "sentence_image_url": "https://s.coze.cn/t/2-Mto7krZJE/\\",
+        "local_image_path": "c:\\Users\\Admin\\Desktop\\word_card_app\\results\\sentence_images\\vehicles\\car_sentence_20250326_184028.png",
+        "feishu_image_key": "img_v3_02ko_80e6242b-195f-437a-b6f2-0f0320182d4g",
+        "local_audio_path": "C:\\Users\\Admin\\Desktop\\word_card_app\\static\\audio\\tts_Dad_drives_a_car__20250326184032_66533e96.mp3",
+        "feishu_audio_key": "file_v3_00ko_8cd4cd02-9514-472a-9be2-fe1dc9d5581g",
+        "error": null
+      },
+      "error": null
+    }
+  ],
+  "essay": {
+    "words": [
+      "bus",
+      "car"
+    ],
+    "essay": "Look at the bus! It is big. The car is red. We go to the park. Bus and car are fun!",
+    "status": "failed",
+    "local_image_path": "c:\\Users\\Admin\\Desktop\\word_card_app\\results\\essays\\vehicles\\essay_bus_car_20250326_183821.png",
+    "feishu_image_key": "",
+    "local_audio_path": "",
+    "feishu_audio_key": "",
+    "error": "type object 'FeishuFileUtils' has no attribute 'upload_image'"
+  },
+  "timestamp": "20250326_183805",
+  "category": "vehicles",
+  "error": null,
+  "stats": {
+    "total_words": 2,
+    "processed_words": 2,
+    "elapsed_time": 147.72907423973083,
+    "success_count": 2,
+    "failed_count": 0
+  }
+}
