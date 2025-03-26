@@ -891,7 +891,7 @@ if __name__ == '__main__':
     
     # 初始化数据库和目录
     if not os.path.exists('database.db'):
-        init_db()
+    init_db()
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
     if not os.path.exists(app.config['AUDIO_FOLDER']):
