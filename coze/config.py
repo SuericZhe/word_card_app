@@ -15,4 +15,11 @@ WORKFLOW_IDS = {
 # 执行配置
 DEFAULT_ASYNC = True  # 默认使用异步执行（仅限专业版用户）
 DEFAULT_POLL_MAX_ATTEMPTS = 20  # 默认轮询最大尝试次数
-DEFAULT_POLL_INTERVAL = 5  # 默认轮询间隔（秒） 
+DEFAULT_POLL_INTERVAL = 5  # 默认轮询间隔（秒）
+
+# 飞书API配置
+FEISHU_APP_ID = "cli_a769cd7901ac100e"
+FEISHU_APP_SECRET = "JaCmFgaAoqvqYnvEiwKBQb2DW5F7CzFf"
+
+# 调试级别
+DEBUG = True 
