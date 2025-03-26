@@ -10,8 +10,8 @@ import json
 from datetime import datetime
 import time
 import signal
-from coze_api import CozeAPI
-import config
+from coze.coze_api import CozeAPI
+import coze.config as config
 import re
 
 

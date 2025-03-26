@@ -1,0 +1,29 @@
+2025-03-26 18:25:00,612 - ComprehensiveWorkflow - INFO - 已确保数据库表结构存在: C:\Users\Admin\Desktop\word_card_app\database.db
+2025-03-26 18:25:00,613 - ComprehensiveWorkflow - INFO - [sentences] 为 2 个单词生成例句和作文 - 进度: 0%
+2025-03-26 18:25:11,307 - ComprehensiveWorkflow - INFO - [essay] 处理作文 - 进度: 20%
+2025-03-26 18:25:11,330 - ComprehensiveWorkflow - ERROR - 处理作文时出错: type object 'FeishuFileUtils' has no attribute 'upload_image'
+2025-03-26 18:25:11,330 - ComprehensiveWorkflow - INFO - [essay] 作文处理完成 - 进度: 30%
+2025-03-26 18:25:11,330 - ComprehensiveWorkflow - INFO - [word] 处理单词 1/2: apple - 进度: 30%
+2025-03-26 18:25:11,331 - ComprehensiveWorkflow - INFO - 为单词 'apple' 生成图片
+2025-03-26 18:25:39,774 - Lark - DEBUG - POST https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal 200, headers: {"User-Agent": "oapi-sdk-python/v1.4.12"}, params: [], body: {"app_id": "cli_a769cd7901ac100e", "app_secret": "JaCmFgaAoqvqYnvEiwKBQb2DW5F7CzFf"}
+2025-03-26 18:25:40,621 - Lark - DEBUG - POST https://open.feishu.cn/open-apis/im/v1/images 200, headers: {"User-Agent": "oapi-sdk-python/v1.4.12", "Content-Type": "multipart/form-data; boundary=0f86fc28432248afb916983abe317534", "Authorization": "Bearer t-g1043qipEO7ILNHML26ZXWQDKUCXVIMQSNA276HE"}, params: [], body: <MultipartEncoder: {'image_type': 'message', 'image': <_io.BufferedReader name='C:\\Users\\Admin\\Desktop\\word_card_app\\results\\captioned_apple.png'>}>
+2025-03-26 18:25:41,393 - ComprehensiveWorkflow - INFO - 为单词 'apple' 的例句生成图片
+2025-03-26 18:26:09,842 - Lark - DEBUG - POST https://open.feishu.cn/open-apis/im/v1/images 200, headers: {"User-Agent": "oapi-sdk-python/v1.4.12", "Content-Type": "multipart/form-data; boundary=f7dcabd5444e4b37a23a4dbf7db874a5", "Authorization": "Bearer t-g1043qipEO7ILNHML26ZXWQDKUCXVIMQSNA276HE"}, params: [], body: <MultipartEncoder: {'image_type': 'message', 'image': <_io.BufferedReader name='C:\\Users\\Admin\\Desktop\\word_card_app\\results\\captioned_red_apple_on_the_table..png'>}>
+2025-03-26 18:26:10,629 - ComprehensiveWorkflow - INFO - 保存单词图片信息到数据库: apple
+2025-03-26 18:26:10,630 - ComprehensiveWorkflow - INFO - 保存句子信息到数据库: apple
+2025-03-26 18:26:10,630 - ComprehensiveWorkflow - INFO - 插入内容表: test_comprehensive
+2025-03-26 18:26:10,632 - ComprehensiveWorkflow - INFO - 单词 apple 的处理结果已保存到数据库
+2025-03-26 18:26:10,632 - ComprehensiveWorkflow - INFO - [word] 单词 apple 处理完成 - 进度: 30%
+2025-03-26 18:26:10,632 - ComprehensiveWorkflow - INFO - [word] 处理单词 2/2: bird - 进度: 65%
+2025-03-26 18:26:10,633 - ComprehensiveWorkflow - INFO - 为单词 'bird' 生成图片
+2025-03-26 18:26:44,708 - Lark - DEBUG - POST https://open.feishu.cn/open-apis/im/v1/images 200, headers: {"User-Agent": "oapi-sdk-python/v1.4.12", "Content-Type": "multipart/form-data; boundary=d6983f169d244f5e8e67544605d9c0dc", "Authorization": "Bearer t-g1043qipEO7ILNHML26ZXWQDKUCXVIMQSNA276HE"}, params: [], body: <MultipartEncoder: {'image_type': 'message', 'image': <_io.BufferedReader name='C:\\Users\\Admin\\Desktop\\word_card_app\\results\\captioned_bird.png'>}>
+2025-03-26 18:26:45,508 - ComprehensiveWorkflow - INFO - 为单词 'bird' 的例句生成图片
+2025-03-26 18:27:20,236 - Lark - DEBUG - POST https://open.feishu.cn/open-apis/im/v1/images 200, headers: {"User-Agent": "oapi-sdk-python/v1.4.12", "Content-Type": "multipart/form-data; boundary=a9167d66892e46f092e409619afbecb5", "Authorization": "Bearer t-g1043qipEO7ILNHML26ZXWQDKUCXVIMQSNA276HE"}, params: [], body: <MultipartEncoder: {'image_type': 'message', 'image': <_io.BufferedReader name='C:\\Users\\Admin\\Desktop\\word_card_app\\results\\captioned_little_bird_sings_high..png'>}>
+2025-03-26 18:27:21,151 - ComprehensiveWorkflow - INFO - 保存单词图片信息到数据库: bird
+2025-03-26 18:27:21,151 - ComprehensiveWorkflow - INFO - 保存句子信息到数据库: bird
+2025-03-26 18:27:21,151 - ComprehensiveWorkflow - INFO - 更新内容表: test_comprehensive
+2025-03-26 18:27:21,153 - ComprehensiveWorkflow - INFO - 单词 bird 的处理结果已保存到数据库
+2025-03-26 18:27:21,153 - ComprehensiveWorkflow - INFO - [word] 单词 bird 处理完成 - 进度: 65%
+2025-03-26 18:27:21,153 - ComprehensiveWorkflow - INFO - 全部 2 个单词处理完成，耗时：140.54秒
+2025-03-26 18:27:21,153 - ComprehensiveWorkflow - INFO - [complete] 全部 2 个单词处理完成 - 进度: 100%
+2025-03-26 18:27:21,155 - ComprehensiveWorkflow - INFO - 综合处理结果已保存到: C:\Users\Admin\Desktop\word_card_app\results\comprehensive\comprehensive_test_comprehensive_20250326_182500.json

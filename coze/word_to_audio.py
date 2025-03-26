@@ -12,8 +12,8 @@ import json
 from datetime import datetime
 import time
 import uuid
-from douyin_tts import DouyinTTS
-from feishu_file_utils import FeishuFileUtils
+from coze.douyin_tts import DouyinTTS
+from coze.feishu_file_utils import FeishuFileUtils
 
 class WordToAudioWorkflow:
     """

@@ -50,6 +50,13 @@
   - 支持本地图片或URL图片处理
   - 可选自动上传到飞书
 
+- **standalone_text_to_pic.py**: 独立的英文文本转图片工具
+  - 将英文文本转换为精美排版的图片
+  - 自动计算最佳字体大小和行距
+  - 支持标题和正文分开排版
+  - 可作为独立工具使用，不依赖其他模块
+  - 提供命令行接口和API接口
+
 ## 飞书集成模块
 
 ### 1. 图片工具
@@ -155,3 +162,44 @@ image_key = add_text_and_upload_to_feishu(
 
 print(f"飞书图片Key: {image_key}")
 ```
+
+### 英文文本转图片示例
+
+```python
+from coze.standalone_text_to_pic import TextToPicture
+
+# 创建文本转图片处理器
+processor = TextToPicture()
+
+# 生成图片
+output_path = processor.create_image(
+    text="This is a test of the text to image conversion. The font size is automatically calculated based on the length of the text.",
+    title="Sample Title",
+    output_path="output/result.png"  # 可选，默认会自动生成路径
+)
+
+print(f"图片已保存到: {output_path}")
+```
+
+## 独立工具
+
+### 文本转图片工具
+
+可通过命令行单独使用文本转图片功能：
+
+```bash
+# 使用内置测试功能
+python coze/standalone_text_to_pic.py --test
+
+# 从文件读取文本并转换为图片
+python coze/standalone_text_to_pic.py input.txt "Title" 
+
+# 直接在命令行输入文本
+python coze/standalone_text_to_pic.py --text "Your text here" "Title"
+```
+
+可选参数：
+- 文本：可从文件读取或直接提供
+- 标题：可选的图片标题
+- 字体：可指定自定义字体文件
+- 字体大小：可指定固定大小或自动计算
