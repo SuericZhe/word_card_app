@@ -3,8 +3,8 @@ import json
 from datetime import datetime
 import time
 import signal
-from coze_api import CozeAPI
-import config
+from .coze_api import CozeAPI
+from . import config
 
 class WordToSentenceWorkflow:
     """
