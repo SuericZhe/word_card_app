@@ -1,0 +1,250 @@
+{% extends "layout.html" %}
+
+{% block title %}AI生成闪卡 - 单词卡片应用{% endblock %}
+
+{% block styles %}
+<style>
+    .generate-container {
+        max-width: 800px;
+        margin: 40px auto;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+    
+    .generate-header {
+        padding: 30px;
+        background: #f5f5f7;
+        border-bottom: 1px solid #e5e5e5;
+    }
+    
+    .generate-title {
+        font-size: 28px;
+        font-weight: 600;
+        color: #1d1d1f;
+        margin-bottom: 8px;
+    }
+    
+    .generate-subtitle {
+        font-size: 16px;
+        color: #86868b;
+    }
+    
+    .generate-body {
+        padding: 30px;
+    }
+    
+    .form-group {
+        margin-bottom: 25px;
+    }
+    
+    .form-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: #1d1d1f;
+        margin-bottom: 8px;
+    }
+    
+    .form-select {
+        width: 100%;
+        padding: 12px 16px;
+        font-size: 16px;
+        border: 1px solid #d2d2d7;
+        border-radius: 8px;
+        background-color: white;
+        color: #1d1d1f;
+        transition: all 0.3s;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8.825L1.175 4 2.238 2.938 6 6.7l3.763-3.763L10.825 4z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 16px center;
+        background-size: 12px;
+    }
+    
+    .form-select:focus {
+        outline: none;
+        border-color: #0071e3;
+        box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        font-size: 16px;
+        border: 1px solid #d2d2d7;
+        border-radius: 8px;
+        background-color: white;
+        color: #1d1d1f;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #0071e3;
+        box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
+    }
+    
+    textarea.form-control {
+        height: 150px;
+        resize: vertical;
+    }
+    
+    .form-hint {
+        margin-top: 6px;
+        color: #86868b;
+        font-size: 14px;
+    }
+    
+    .btn-group {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 30px;
+    }
+    
+    .btn-primary {
+        background: #0071e3;
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .btn-primary:hover {
+        background: #0077ed;
+    }
+    
+    .btn-back {
+        color: #0071e3;
+        text-decoration: none;
+        font-size: 16px;
+    }
+    
+    .btn-back:hover {
+        text-decoration: underline;
+    }
+    
+    .alert {
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+    }
+    
+    .alert-danger {
+        background-color: #fff1f0;
+        border: 1px solid #ffccc7;
+        color: #cf1322;
+    }
+    
+    .progress-info {
+        background: #f5f5f7;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .progress-info p {
+        margin: 8px 0;
+        color: #1d1d1f;
+    }
+    
+    .progress-info .status {
+        font-weight: 500;
+        color: #0071e3;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="generate-container">
+    <div class="generate-header">
+        <h1 class="generate-title">AI生成闪卡</h1>
+        <div class="generate-subtitle">输入内容，AI将自动生成对应的闪卡</div>
+    </div>
+    
+    <div class="generate-body">
+        {% if error %}
+        <div class="alert alert-danger">
+            {{ error }}
+        </div>
+        {% endif %}
+        
+        {% if task_in_progress %}
+        <div class="progress-info">
+            <p><span class="status">正在处理中...</span></p>
+            <p>您的闪卡正在生成，请耐心等待。查看右下角的进度窗口了解详细进度。</p>
+            <p>您可以继续使用其他功能，生成完成后会自动通知您。</p>
+        </div>
+        {% else %}
+        <form method="post">
+            <div class="form-group">
+                <label for="category" class="form-label">选择分类</label>
+                <select name="category" id="category" class="form-select" required>
+                    <option value="words" selected>单词</option>
+                    <option value="university">大学之道</option>
+                    <option value="music">音律启蒙</option>
+                    <option value="oracle">甲骨文</option>
+                </select>
+                <div class="form-hint">选择要生成闪卡的分类</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="words" class="form-label">输入内容</label>
+                <textarea name="words" id="words" class="form-control" placeholder="请输入单词，以空格隔开，如ant bird" required></textarea>
+                <div class="form-hint" id="inputHint">输入单词列表，以空格分隔</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="learn_date" class="form-label">学习日期</label>
+                <input type="date" name="learn_date" id="learn_date" class="form-control" value="{{ today_date }}">
+                <div class="form-hint">指定学习日期，默认为今天</div>
+            </div>
+            
+            <div class="btn-group">
+                <a href="{{ url_for('index') }}" class="btn-back">返回首页</a>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-magic"></i> 开始生成
+                </button>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.getElementById('category');
+    const wordsInput = document.getElementById('words');
+    const inputHint = document.getElementById('inputHint');
+    
+    const hints = {
+        'words': '输入单词列表，以空格分隔',
+        'university': '输入《大学》内容，每行一段',
+        'music': '输入音律启蒙内容，每行一段',
+        'oracle': '输入甲骨文内容，每行一个'
+    };
+    
+    const placeholders = {
+        'words': '请输入单词，以空格隔开，如ant bird',
+        'university': '请输入《大学》内容，每行一段',
+        'music': '请输入音律启蒙内容，每行一段',
+        'oracle': '请输入甲骨文内容，每行一个'
+    };
+    
+    function updateInputHint() {
+        const category = categorySelect.value;
+        inputHint.textContent = hints[category];
+        wordsInput.placeholder = placeholders[category];
+    }
+    
+    categorySelect.addEventListener('change', updateInputHint);
+    updateInputHint(); // 初始化提示
+});
+</script>
+{% endblock %} 

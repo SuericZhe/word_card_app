@@ -1,5 +1,5 @@
 import sqlite3
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, session
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, session, Response
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime, timedelta
@@ -13,11 +13,13 @@ from contextlib import contextmanager
 import time
 import uuid
 import functools
+import json
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-123456789'  # 修改为更安全的密钥
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['AUDIO_FOLDER'] = 'static/audio'
+app.config['MAIN_PIC_FOLDER'] = 'static/main_pic'  # 添加主图片文件夹配置
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['LOG_FOLDER'] = 'logs'
 app.config['JSON_AS_ASCII'] = False  # 支持中文 JSON
@@ -574,37 +576,67 @@ def review(id):
     finally:
         pass  # 连接会在线程结束时自动关闭
 
+def load_feishu_image_keys():
+    """加载飞书图片key"""
+    try:
+        with open("static/main_pic/feishu_image_keys.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"加载飞书图片key失败: {e}")
+        return {}
+
+def get_category_stats():
+    """获取各个分类的统计信息"""
+    try:
+        conn = get_db()
+        c = conn.cursor()
+        today = datetime.now().strftime('%Y-%m-%d')
+        stats = {}
+        
+        for category in CATEGORIES:
+            # 获取今天的新内容数量
+            new_count = c.execute('''SELECT COUNT(*) as count 
+                                   FROM contents 
+                                   WHERE category = ? AND learn_date = ?''',
+                                (category, today)).fetchone()['count']
+            
+            # 获取今天需要复习的内容数量
+            review_count = c.execute('''SELECT COUNT(*) as count 
+                                      FROM contents 
+                                      WHERE category = ? 
+                                      AND next_review_date <= ? 
+                                      AND next_review_date IS NOT NULL''',
+                                   (category, today)).fetchone()['count']
+            
+            stats[category] = {
+                'new': new_count,
+                'review': review_count
+            }
+        
+        return stats
+    except Exception as e:
+        app.logger.error(f"获取分类统计信息失败: {e}")
+        return {}
+
 @app.route('/')
 @login_required
 @cache.cached(timeout=60)  # 1分钟缓存
 def index():
-    conn = get_db()
-    c = conn.cursor()
-    today = datetime.now().strftime('%Y-%m-%d')
-    
+    """首页"""
     try:
-        # 使用单个查询获取所有统计数据
-        stats = {category: {'new': 0, 'review': 0} for category in CATEGORIES.keys()}
+        # 获取分类统计信息
+        stats = get_category_stats()
         
-        # 获取新内容统计
-        c.execute('''SELECT category, COUNT(*) as count 
-                    FROM contents 
-                    WHERE learn_date = ?
-                    GROUP BY category''', (today,))
-        for row in c.fetchall():
-            stats[row['category']]['new'] = row['count']
+        # 加载飞书图片key
+        feishu_image_keys = load_feishu_image_keys()
         
-        # 获取待复习统计
-        c.execute('''SELECT category, COUNT(*) as count 
-                    FROM contents 
-                    WHERE next_review_date <= ? AND next_review_date IS NOT NULL
-                    GROUP BY category''', (today,))
-        for row in c.fetchall():
-            stats[row['category']]['review'] = row['count']
-        
-        return render_template('category_select.html', categories=CATEGORIES, stats=stats)
-    finally:
-        pass  # 连接会在线程结束时自动关闭
+        return render_template('category_select.html', 
+                             categories=CATEGORIES,
+                             stats=stats,
+                             feishu_image_keys=feishu_image_keys)
+    except Exception as e:
+        print(f"访问首页时出错: {e}")
+        return render_template('error.html', error=str(e))
 
 @app.route('/category/<category>')
 @cache.memoize(60)  # 1分钟缓存，基于参数
@@ -878,6 +910,162 @@ def check_session():
             time_elapsed = datetime.now() - login_time
             app.logger.info(f"会话信息: 登录时间={login_time}, 已经过时间={time_elapsed}")
 
+@app.route('/progress_updates')
+@login_required
+def progress_updates():
+    """返回进度更新的SSE流"""
+    def generate():
+        # 发送初始数据
+        if 'task_progress' in session:
+            yield f"data: {json.dumps(session.get('task_progress', {}))}\n\n"
+        
+        # 保持连接打开
+        count = 0
+        while count < 100:  # 限制连接时间
+            time.sleep(1)  # 每秒检查一次进度
+            count += 1
+            if 'task_progress' in session:
+                progress_data = dict(session.get('task_progress', {}))
+                progress_data['timestamp'] = int(time.time())  # 添加时间戳确保数据变化
+                yield f"data: {json.dumps(progress_data)}\n\n"
+            else:
+                yield f"data: {json.dumps({'overall': 0, 'timestamp': int(time.time())})}\n\n"
+    
+    response = Response(generate(), mimetype='text/event-stream')
+    response.headers['Cache-Control'] = 'no-cache'
+    response.headers['X-Accel-Buffering'] = 'no'
+    return response
+
+# 添加一个任务处理入口点
+def process_words_task(words, category, learn_date):
+    """后台处理单词生成任务"""
+    try:
+        # 创建独立的线程局部会话副本
+        with app.app_context():
+            task_progress = {
+                'overall': 0,
+                'word_image': 0,
+                'sentence_image': 0,
+                'essay_image': 0,
+                'word_audio': 0,
+                'sentence_audio': 0,
+                'essay_audio': 0,
+                'message': '开始处理单词...'
+            }
+            
+            # 保存到一个全局变量，避免使用session
+            app.config['CURRENT_TASK_PROGRESS'] = task_progress
+            
+            # 模拟处理过程
+            import random
+            app.logger.info(f"开始处理单词任务: {words}，分类: {category}")
+            
+            # 模拟处理过程
+            for i in range(0, 101, 5):
+                # 更新各个组件的进度
+                task_progress['overall'] = i
+                task_progress['word_image'] = min(100, i + random.randint(0, 20))
+                task_progress['sentence_image'] = min(100, i + random.randint(-10, 10))
+                task_progress['essay_image'] = min(100, i - random.randint(0, 10))
+                task_progress['word_audio'] = min(100, i + random.randint(-5, 15))
+                task_progress['sentence_audio'] = min(100, i - random.randint(5, 15))
+                task_progress['essay_audio'] = min(100, i - random.randint(10, 20))
+                
+                if i < 30:
+                    task_progress['message'] = '正在生成单词图像...'
+                elif i < 60:
+                    task_progress['message'] = '正在生成例句图像...'
+                elif i < 90:
+                    task_progress['message'] = '正在处理音频资源...'
+                else:
+                    task_progress['message'] = '即将完成处理...'
+                
+                # 更新全局变量中的进度
+                app.config['CURRENT_TASK_PROGRESS'] = task_progress
+                app.logger.info(f"任务进度更新: {i}%")
+                time.sleep(1)  # 模拟处理时间
+            
+            # 任务完成
+            task_progress['overall'] = 100
+            task_progress['message'] = f'成功处理了 {len(words.split())} 个单词'
+            task_progress['redirect'] = url_for('index')
+            app.config['CURRENT_TASK_PROGRESS'] = task_progress
+            app.config['TASK_IN_PROGRESS'] = False
+            app.logger.info(f"任务完成: {words}")
+            
+    except Exception as e:
+        # 记录错误
+        app.logger.error(f"处理单词任务出错: {e}")
+        task_progress = {'overall': 0, 'message': f'处理失败: {str(e)}'}
+        app.config['CURRENT_TASK_PROGRESS'] = task_progress
+        app.config['TASK_IN_PROGRESS'] = False
+
+@app.route('/task_status')
+@login_required
+def task_status():
+    """返回当前任务状态的JSON"""
+    progress = app.config.get('CURRENT_TASK_PROGRESS', {})
+    in_progress = app.config.get('TASK_IN_PROGRESS', False)
+    return jsonify({'progress': progress, 'in_progress': in_progress})
+
+# 修改AI生成路由，使用后台线程处理任务
+@app.route('/ai_generate', methods=['GET', 'POST'])
+@login_required
+def ai_generate():
+    """AI生成单词卡片页面"""
+    # 检查是否有任务正在进行
+    task_in_progress = app.config.get('TASK_IN_PROGRESS', False)
+    error = None
+    
+    if request.method == 'POST' and not task_in_progress:
+        # 获取表单数据
+        words = request.form.get('words', '').strip()
+        category = 'words'  # 固定使用words分类
+        learn_date = request.form.get('learn_date', datetime.now().strftime('%Y-%m-%d'))
+        
+        # 验证输入
+        if not words:
+            error = "请输入单词"
+        else:
+            # 设置任务状态
+            app.config['TASK_IN_PROGRESS'] = True
+            app.config['CURRENT_TASK_PROGRESS'] = {
+                'overall': 0,
+                'word_image': 0,
+                'sentence_image': 0,
+                'essay_image': 0,
+                'word_audio': 0,
+                'sentence_audio': 0,
+                'essay_audio': 0,
+                'message': '正在准备处理...'
+            }
+            
+            # 启动任务处理线程
+            import threading
+            task_thread = threading.Thread(
+                target=process_words_task,
+                args=(words, category, learn_date)
+            )
+            task_thread.daemon = True
+            task_thread.start()
+            
+            # 重定向到首页，显示进度
+            flash("已开始处理单词，请在进度窗口查看处理状态", "info")
+            return redirect(url_for('index'))
+    
+    # GET请求或有错误的POST请求渲染模板
+    return render_template(
+        'ai_generate.html',
+        today_date=datetime.now().strftime('%Y-%m-%d'),
+        task_in_progress=task_in_progress,
+        error=error
+    )
+
+@app.route('/static/main_pic/<path:filename>')
+def serve_main_pic(filename):
+    """提供主图片文件的访问"""
+    return send_from_directory(app.config['MAIN_PIC_FOLDER'], filename)
+
 if __name__ == '__main__':
     # 清除所有会话数据
     session_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'flask_session')
@@ -891,7 +1079,7 @@ if __name__ == '__main__':
     
     # 初始化数据库和目录
     if not os.path.exists('database.db'):
-    init_db()
+        init_db()
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
     if not os.path.exists(app.config['AUDIO_FOLDER']):

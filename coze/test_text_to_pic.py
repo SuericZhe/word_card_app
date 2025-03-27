@@ -14,11 +14,11 @@ from standalone_text_to_pic import TextToPicture
 
 def main():
     """测试作文生成图片功能"""
-    # 创建一个更长的10句话英文作文，句子长短不一
-    essay = """Animals are our friends on this planet. Dogs are loyal companions who love to play and protect us. Cats are independent but still enjoy cuddles and attention. Birds bring beautiful songs to our gardens and parks. Fish swim gracefully in rivers, lakes and oceans all around the world. Elephants are the largest land animals and have amazing memories. Monkeys are playful and very intelligent creatures. Rabbits hop quickly and have soft fur that feels nice to touch. Bears hibernate during cold winter months. All animals deserve our respect and protection."""
+    # 创建一个6句话的简单英文作文
+    essay = """The sun is shining brightly today. Birds are singing in the trees outside my window. I can hear children playing in the park nearby. This is a perfect day for a picnic in the garden. We will bring some sandwiches and fresh fruits. Everyone will have a wonderful time together."""
     
     # 设置标题
-    title = "Our Animal Friends"
+    title = "A Beautiful Day"
     
     # 创建输出目录
     output_dir = os.path.join(current_dir, "test_output")
@@ -45,7 +45,7 @@ def main():
         print(f"\n✅ 成功生成图片: {result_path}")
         print("请检查生成的图片，确认：")
         print("1. 每句话是否都换行")
-        print("2. 行间距是否明显区分每个句子")
+        print("2. 行间距是否为文字大小的一半")
     else:
         print("\n❌ 图片生成失败")
 
