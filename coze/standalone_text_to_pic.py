@@ -62,7 +62,7 @@ class TextToPicture:
         
         # 设置默认参数
         self.font_size = font_size  # 如果为None，将在create_image中动态计算
-        self.line_spacing = line_spacing or 1.3  # 英文行间距，通常比中文小
+        self.line_spacing = line_spacing or 0.5  # 修改为字体一半大小的行间距
         
     def _calculate_optimal_font_size(self, text, title=None):
         """
@@ -116,10 +116,6 @@ class TextToPicture:
             # 自动计算最优字体大小
             optimal_font_size = self._calculate_optimal_font_size(text, title)
             
-            # 创建一个白色背景图片
-            image = Image.new('RGB', (self.width, self.height), color=self.bg_color)
-            draw = ImageDraw.Draw(image)
-            
             # 创建字体对象
             try:
                 font = ImageFont.truetype(self.font_path, optimal_font_size)
@@ -138,16 +134,31 @@ class TextToPicture:
                 bbox = font.getbbox(text)
                 return bbox[2] - bbox[0]
                 
-            # 英文文本分行处理 - 优化对英文单词的处理
+            # 改进的文本分行处理 - 每句话都换行
             wrapped_text = []
             
-            for paragraph in text.split('\n'):
-                if not paragraph.strip():
-                    wrapped_text.append('')  # 保留空行
+            # 按句子分割文本 (句号、问号、感叹号等结尾的为一句)
+            import re
+            sentences = re.split(r'([.!?])\s*', text)
+            
+            # 组合回句子，保留标点符号
+            i = 0
+            while i < len(sentences):
+                if i + 1 < len(sentences) and sentences[i+1] in ['.', '!', '?']:
+                    # 当前句子 + 标点符号
+                    sentence = sentences[i] + sentences[i+1]
+                    i += 2
+                else:
+                    # 只有当前句子（可能已经是标点符号）
+                    sentence = sentences[i]
+                    i += 1
+                
+                if not sentence.strip():
                     continue
-                    
-                # 按单词分割段落
-                words = paragraph.split()
+                
+                # 对每个句子进行自动换行处理
+                # 按单词分割句子
+                words = sentence.strip().split()
                 if not words:
                     continue
                     
@@ -173,9 +184,16 @@ class TextToPicture:
                 # 添加最后一行
                 if current_line:
                     wrapped_text.append(current_line)
+                
+                # 在每个句子后只添加一个空行，减少空间占用
+                wrapped_text.append('')
             
-            # 计算行高
-            line_height = int(optimal_font_size * self.line_spacing)
+            # 去掉最后一个空行（如果有）
+            if wrapped_text and not wrapped_text[-1]:
+                wrapped_text.pop()
+            
+            # 计算行高 - 使用更合理的行间距
+            line_height = int(optimal_font_size * (1 + self.line_spacing))
             
             # 计算文本总高度
             total_text_height = len(wrapped_text) * line_height
@@ -185,6 +203,15 @@ class TextToPicture:
             if title:
                 title_height = int(optimal_font_size * 1.4 * 1.2)  # 标题字号 * 行间距
                 total_text_height += title_height + int(optimal_font_size * 0.5)  # 额外空间分隔标题和正文
+            
+            # 动态调整图片高度，确保内容不会超出边界
+            required_height = total_text_height + (2 * self.padding)
+            if required_height > self.height:
+                self.height = required_height
+            
+            # 创建一个白色背景图片 - 动态调整后的尺寸
+            image = Image.new('RGB', (self.width, self.height), color=self.bg_color)
+            draw = ImageDraw.Draw(image)
             
             # 计算起始Y坐标（垂直居中）
             start_y = max(self.padding, (self.height - total_text_height) // 2)
@@ -204,7 +231,7 @@ class TextToPicture:
             # 绘制文本内容
             for line in wrapped_text:
                 if not line:  # 处理空行
-                    current_y += line_height // 2  # 空行高度减半
+                    current_y += int(line_height * 0.5)  # 空行高度减半
                     continue
                     
                 # 左对齐文本
