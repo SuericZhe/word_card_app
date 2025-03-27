@@ -34,6 +34,7 @@ from word_to_audio import WordToAudioWorkflow
 from add_text_to_pic import add_text_to_image, add_text_and_upload_to_feishu
 from douyin_tts import DouyinTTS
 from feishu_file_utils import FeishuFileUtils
+from feishu_image_utils import FeishuImageUtils
 from standalone_text_to_pic import TextToPicture
 
 # 配置日志
@@ -464,19 +465,14 @@ class ComprehensiveWorkflow:
             result["local_image_path"] = local_image_path
             
             # 上传到飞书
-            feishu_image_key = add_text_and_upload_to_feishu(
-                image_source=image_url,
-                text=word,
-                font_size_percentage=0.06
-            )
-            
-            if not feishu_image_key:
-                error_msg = "上传图片到飞书失败"
-                logger.warning(error_msg)
-                result["error"] = error_msg
-                # 继续执行，不要因为上传失败而终止
-            
-            result["feishu_image_key"] = feishu_image_key or ""
+            if os.path.exists(local_image_path):
+                logger.info(f"上传单词图片到飞书: {local_image_path}")
+                image_key = FeishuImageUtils.upload_image(local_image_path)
+                
+                if image_key:
+                    result["feishu_image_key"] = image_key
+                else:
+                    logger.warning("上传单词图片到飞书失败")
             
             # 生成单词音频
             audio_result = self.word_to_audio_workflow.execute(
@@ -559,19 +555,14 @@ class ComprehensiveWorkflow:
             result["local_image_path"] = local_image_path
             
             # 上传到飞书
-            feishu_image_key = add_text_and_upload_to_feishu(
-                image_source=image_url,
-                text=display_text,
-                font_size_percentage=0.05
-            )
-            
-            if not feishu_image_key:
-                error_msg = "上传句子图片到飞书失败"
-                logger.warning(error_msg)
-                result["error"] = error_msg
-                # 继续执行，不要因为上传失败而终止
-            
-            result["feishu_image_key"] = feishu_image_key or ""
+            if os.path.exists(local_image_path):
+                logger.info(f"上传句子图片到飞书: {local_image_path}")
+                image_key = FeishuImageUtils.upload_image(local_image_path)
+                
+                if image_key:
+                    result["feishu_image_key"] = image_key
+                else:
+                    logger.warning("上传句子图片到飞书失败")
             
             # 生成句子音频
             audio_result = self.tts.text_to_speech(
@@ -647,14 +638,15 @@ class ComprehensiveWorkflow:
             
             result["local_image_path"] = local_image_path
             
-            # 上传到飞书
-            with open(local_image_path, 'rb') as f:
-                file_info = FeishuFileUtils.upload_image(f.read(), f"{safe_words}_essay.png")
+            # 上传作文图片到飞书
+            if os.path.exists(local_image_path):
+                logger.info(f"上传作文图片到飞书: {local_image_path}")
+                image_key = FeishuImageUtils.upload_image(local_image_path)
                 
-            if file_info and file_info.get("image_key"):
-                result["feishu_image_key"] = file_info["image_key"]
-            else:
-                logger.warning("上传作文图片到飞书失败")
+                if image_key:
+                    result["feishu_image_key"] = image_key
+                else:
+                    logger.warning("上传作文图片到飞书失败")
             
             # 生成作文音频
             audio_result = self.tts.text_to_speech(
