@@ -69,8 +69,7 @@
     
     .page-header {
         display: flex;
-        justify-content: flex-end;
-        align-items: center;
+        flex-direction: column;
         margin-bottom: 30px;
         padding-bottom: 15px;
         border-bottom: 1px solid #eee;
@@ -79,6 +78,8 @@
     .header-actions {
         display: flex;
         gap: 10px;
+        justify-content: flex-end;
+        margin-top: 15px;
     }
     
     .btn {
@@ -134,12 +135,48 @@
         90% { opacity: 1; }
         100% { opacity: 0; }
     }
+    
+    /* 闪现消息样式 */
+    .alert {
+        padding: 12px 15px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        border-left: 4px solid;
+    }
+    
+    .alert-success {
+        background-color: #f6ffed;
+        border-color: #52c41a;
+        color: #389e0d;
+    }
+    
+    .alert-info {
+        background-color: #e6f7ff;
+        border-color: #1890ff;
+        color: #0070cc;
+    }
+    
+    .alert-danger {
+        background-color: #fff1f0;
+        border-color: #ff4d4f;
+        color: #cf1322;
+    }
 </style>
 {% endblock %}
 
 {% block body %}
 <div class="category-container">
     <div class="page-header">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
         <div class="header-actions">
             <a href="{{ url_for('ai_generate') }}" class="btn btn-primary">
                 <i class="fas fa-magic"></i> AI生成

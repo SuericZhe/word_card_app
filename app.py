@@ -620,23 +620,33 @@ def get_category_stats():
 
 @app.route('/')
 @login_required
-@cache.cached(timeout=60)  # 1分钟缓存
 def index():
     """首页"""
-    try:
-        # 获取分类统计信息
-        stats = get_category_stats()
-        
-        # 加载飞书图片key
-        feishu_image_keys = load_feishu_image_keys()
-        
-        return render_template('category_select.html', 
-                             categories=CATEGORIES,
-                             stats=stats,
-                             feishu_image_keys=feishu_image_keys)
-    except Exception as e:
-        print(f"访问首页时出错: {e}")
-        return render_template('error.html', error=str(e))
+    app.logger.info("加载首页")
+    
+    # 获取飞书图片键值
+    image_keys = load_feishu_image_keys()
+    
+    # 获取分类统计信息
+    stats = get_category_stats()
+    
+    # 检查AI任务状态并显示相应消息
+    if 'ai_task_complete' in session and session['ai_task_complete']:
+        word_count = session.get('ai_word_count', 0)
+        flash(f"闪卡任务已处理完成，共处理 {word_count} 个单词", "success")
+        # 清除标志
+        del session['ai_task_complete']
+        if 'ai_word_count' in session:
+            del session['ai_word_count']
+    
+    # 检查是否有任务错误
+    if 'ai_task_error' in session:
+        error_msg = session['ai_task_error']
+        flash(f"闪卡任务处理失败: {error_msg}", "danger")
+        # 清除标志
+        del session['ai_task_error']
+    
+    return render_template('category_select.html', stats=stats, image_keys=image_keys)
 
 @app.route('/category/<category>')
 @cache.memoize(60)  # 1分钟缓存，基于参数
@@ -922,28 +932,46 @@ def ai_generate():
         
         # 验证输入
         if not words:
-            flash("请输入内容", "error")
+            flash("请输入内容", "danger")
             return render_template('ai_generate.html', 
                                  today_date=datetime.now().strftime('%Y-%m-%d'))
         
-        try:
-            # 处理单词
-            if category == 'words':
-                word_list = words.split()
-                for word in word_list:
-                    # TODO: 实现实际的单词处理逻辑
-                    pass
-                flash(f"成功处理 {len(word_list)} 个单词", "success")
-            else:
-                flash("当前仅支持单词类别，其他类别将在后续版本支持", "info")
-            
-            return redirect(url_for('index'))
-            
-        except Exception as e:
-            app.logger.error(f"处理失败: {str(e)}")
-            flash(f"处理失败: {str(e)}", "error")
+        # 类别验证
+        if category != 'words':
+            flash("当前仅支持单词类别，其他类别将在后续版本支持", "info")
             return render_template('ai_generate.html', 
                                  today_date=datetime.now().strftime('%Y-%m-%d'))
+            
+        # 启动后台线程处理任务
+        flash("闪卡任务处理中，请稍后", "info")
+        
+        # 使用线程执行任务
+        def process_task():
+            try:
+                # TODO: 调用 ComprehensiveWorkflow 处理单词
+                time.sleep(2)  # 模拟处理时间
+                
+                # 设置任务完成标志
+                session['ai_task_complete'] = True
+                session['ai_word_count'] = len(words.split())
+            except Exception as e:
+                app.logger.error(f"处理任务失败: {str(e)}")
+                session['ai_task_error'] = str(e)
+        
+        # 清除之前的任务状态
+        if 'ai_task_complete' in session:
+            del session['ai_task_complete']
+        if 'ai_task_error' in session:
+            del session['ai_task_error']
+        if 'ai_word_count' in session:
+            del session['ai_word_count']
+            
+        # 启动处理线程
+        task_thread = threading.Thread(target=process_task)
+        task_thread.daemon = True
+        task_thread.start()
+        
+        return redirect(url_for('index'))
     
     # GET请求渲染模板
     return render_template('ai_generate.html', 
@@ -1030,7 +1058,7 @@ if __name__ == '__main__':
     
     # 初始化数据库和目录
     if not os.path.exists('database.db'):
-    init_db()
+        init_db()
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
     if not os.path.exists(app.config['AUDIO_FOLDER']):
