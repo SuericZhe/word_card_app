@@ -910,161 +910,112 @@ def check_session():
             time_elapsed = datetime.now() - login_time
             app.logger.info(f"会话信息: 登录时间={login_time}, 已经过时间={time_elapsed}")
 
-@app.route('/progress_updates')
-@login_required
-def progress_updates():
-    """返回进度更新的SSE流"""
-    def generate():
-        # 发送初始数据
-        if 'task_progress' in session:
-            yield f"data: {json.dumps(session.get('task_progress', {}))}\n\n"
-        
-        # 保持连接打开
-        count = 0
-        while count < 100:  # 限制连接时间
-            time.sleep(1)  # 每秒检查一次进度
-            count += 1
-            if 'task_progress' in session:
-                progress_data = dict(session.get('task_progress', {}))
-                progress_data['timestamp'] = int(time.time())  # 添加时间戳确保数据变化
-                yield f"data: {json.dumps(progress_data)}\n\n"
-            else:
-                yield f"data: {json.dumps({'overall': 0, 'timestamp': int(time.time())})}\n\n"
-    
-    response = Response(generate(), mimetype='text/event-stream')
-    response.headers['Cache-Control'] = 'no-cache'
-    response.headers['X-Accel-Buffering'] = 'no'
-    return response
-
-# 添加一个任务处理入口点
-def process_words_task(words, category, learn_date):
-    """后台处理单词生成任务"""
-    try:
-        # 创建独立的线程局部会话副本
-        with app.app_context():
-            task_progress = {
-                'overall': 0,
-                'word_image': 0,
-                'sentence_image': 0,
-                'essay_image': 0,
-                'word_audio': 0,
-                'sentence_audio': 0,
-                'essay_audio': 0,
-                'message': '开始处理单词...'
-            }
-            
-            # 保存到一个全局变量，避免使用session
-            app.config['CURRENT_TASK_PROGRESS'] = task_progress
-            
-            # 模拟处理过程
-            import random
-            app.logger.info(f"开始处理单词任务: {words}，分类: {category}")
-            
-            # 模拟处理过程
-            for i in range(0, 101, 5):
-                # 更新各个组件的进度
-                task_progress['overall'] = i
-                task_progress['word_image'] = min(100, i + random.randint(0, 20))
-                task_progress['sentence_image'] = min(100, i + random.randint(-10, 10))
-                task_progress['essay_image'] = min(100, i - random.randint(0, 10))
-                task_progress['word_audio'] = min(100, i + random.randint(-5, 15))
-                task_progress['sentence_audio'] = min(100, i - random.randint(5, 15))
-                task_progress['essay_audio'] = min(100, i - random.randint(10, 20))
-                
-                if i < 30:
-                    task_progress['message'] = '正在生成单词图像...'
-                elif i < 60:
-                    task_progress['message'] = '正在生成例句图像...'
-                elif i < 90:
-                    task_progress['message'] = '正在处理音频资源...'
-                else:
-                    task_progress['message'] = '即将完成处理...'
-                
-                # 更新全局变量中的进度
-                app.config['CURRENT_TASK_PROGRESS'] = task_progress
-                app.logger.info(f"任务进度更新: {i}%")
-                time.sleep(1)  # 模拟处理时间
-            
-            # 任务完成
-            task_progress['overall'] = 100
-            task_progress['message'] = f'成功处理了 {len(words.split())} 个单词'
-            task_progress['redirect'] = url_for('index')
-            app.config['CURRENT_TASK_PROGRESS'] = task_progress
-            app.config['TASK_IN_PROGRESS'] = False
-            app.logger.info(f"任务完成: {words}")
-            
-    except Exception as e:
-        # 记录错误
-        app.logger.error(f"处理单词任务出错: {e}")
-        task_progress = {'overall': 0, 'message': f'处理失败: {str(e)}'}
-        app.config['CURRENT_TASK_PROGRESS'] = task_progress
-        app.config['TASK_IN_PROGRESS'] = False
-
-@app.route('/task_status')
-@login_required
-def task_status():
-    """返回当前任务状态的JSON"""
-    progress = app.config.get('CURRENT_TASK_PROGRESS', {})
-    in_progress = app.config.get('TASK_IN_PROGRESS', False)
-    return jsonify({'progress': progress, 'in_progress': in_progress})
-
-# 修改AI生成路由，使用后台线程处理任务
 @app.route('/ai_generate', methods=['GET', 'POST'])
 @login_required
 def ai_generate():
-    """AI生成单词卡片页面"""
-    # 检查是否有任务正在进行
-    task_in_progress = app.config.get('TASK_IN_PROGRESS', False)
-    error = None
-    
-    if request.method == 'POST' and not task_in_progress:
+    """AI生成闪卡页面"""
+    if request.method == 'POST':
         # 获取表单数据
+        category = request.form.get('category', 'words')
         words = request.form.get('words', '').strip()
-        category = 'words'  # 固定使用words分类
         learn_date = request.form.get('learn_date', datetime.now().strftime('%Y-%m-%d'))
         
         # 验证输入
         if not words:
-            error = "请输入单词"
-        else:
-            # 设置任务状态
-            app.config['TASK_IN_PROGRESS'] = True
-            app.config['CURRENT_TASK_PROGRESS'] = {
-                'overall': 0,
-                'word_image': 0,
-                'sentence_image': 0,
-                'essay_image': 0,
-                'word_audio': 0,
-                'sentence_audio': 0,
-                'essay_audio': 0,
-                'message': '正在准备处理...'
-            }
+            flash("请输入内容", "error")
+            return render_template('ai_generate.html', 
+                                 today_date=datetime.now().strftime('%Y-%m-%d'))
+        
+        try:
+            # 处理单词
+            if category == 'words':
+                word_list = words.split()
+                for word in word_list:
+                    # TODO: 实现实际的单词处理逻辑
+                    pass
+                flash(f"成功处理 {len(word_list)} 个单词", "success")
+            else:
+                flash("当前仅支持单词类别，其他类别将在后续版本支持", "info")
             
-            # 启动任务处理线程
-            import threading
-            task_thread = threading.Thread(
-                target=process_words_task,
-                args=(words, category, learn_date)
-            )
-            task_thread.daemon = True
-            task_thread.start()
-            
-            # 重定向到首页，显示进度
-            flash("已开始处理单词，请在进度窗口查看处理状态", "info")
             return redirect(url_for('index'))
+            
+        except Exception as e:
+            app.logger.error(f"处理失败: {str(e)}")
+            flash(f"处理失败: {str(e)}", "error")
+            return render_template('ai_generate.html', 
+                                 today_date=datetime.now().strftime('%Y-%m-%d'))
     
-    # GET请求或有错误的POST请求渲染模板
-    return render_template(
-        'ai_generate.html',
-        today_date=datetime.now().strftime('%Y-%m-%d'),
-        task_in_progress=task_in_progress,
-        error=error
-    )
+    # GET请求渲染模板
+    return render_template('ai_generate.html', 
+                         today_date=datetime.now().strftime('%Y-%m-%d'))
 
 @app.route('/static/main_pic/<path:filename>')
 def serve_main_pic(filename):
     """提供主图片文件的访问"""
     return send_from_directory(app.config['MAIN_PIC_FOLDER'], filename)
+
+def generate_word_image(word):
+    """生成单词图片"""
+    try:
+        # TODO: 实现单词图片生成逻辑
+        time.sleep(1)  # 模拟处理时间
+    except Exception as e:
+        app.logger.error(f"生成单词图片失败: {str(e)}")
+        raise
+
+def generate_sentence_image(word):
+    """生成例句图片"""
+    try:
+        # TODO: 实现例句图片生成逻辑
+        time.sleep(1)  # 模拟处理时间
+    except Exception as e:
+        app.logger.error(f"生成例句图片失败: {str(e)}")
+        raise
+
+def generate_essay_image(word):
+    """生成作文图片"""
+    try:
+        # TODO: 实现作文图片生成逻辑
+        time.sleep(1)  # 模拟处理时间
+    except Exception as e:
+        app.logger.error(f"生成作文图片失败: {str(e)}")
+        raise
+
+def generate_word_audio(word):
+    """生成单词音频"""
+    try:
+        # TODO: 实现单词音频生成逻辑
+        time.sleep(1)  # 模拟处理时间
+    except Exception as e:
+        app.logger.error(f"生成单词音频失败: {str(e)}")
+        raise
+
+def generate_sentence_audio(word):
+    """生成例句音频"""
+    try:
+        # TODO: 实现例句音频生成逻辑
+        time.sleep(1)  # 模拟处理时间
+    except Exception as e:
+        app.logger.error(f"生成例句音频失败: {str(e)}")
+        raise
+
+def generate_essay_audio(word):
+    """生成作文音频"""
+    try:
+        # TODO: 实现作文音频生成逻辑
+        time.sleep(1)  # 模拟处理时间
+    except Exception as e:
+        app.logger.error(f"生成作文音频失败: {str(e)}")
+        raise
+
+def save_word_to_db(word, learn_date):
+    """保存单词到数据库"""
+    try:
+        # TODO: 实现数据库保存逻辑
+        pass
+    except Exception as e:
+        app.logger.error(f"保存单词到数据库失败: {str(e)}")
+        raise
 
 if __name__ == '__main__':
     # 清除所有会话数据
@@ -1079,7 +1030,7 @@ if __name__ == '__main__':
     
     # 初始化数据库和目录
     if not os.path.exists('database.db'):
-        init_db()
+    init_db()
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
     if not os.path.exists(app.config['AUDIO_FOLDER']):
